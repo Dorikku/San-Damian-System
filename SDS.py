@@ -6,7 +6,6 @@ from ttkbootstrap.constants import *
 from SDC_system import sdcExpenses
 from tkinter import messagebox, simpledialog
 from ttkbootstrap.dialogs import Querybox
-import time
 
 
 sdc_expenses = sdcExpenses()

@@ -1,8 +1,12 @@
-from cs50 import SQL
 from prettytable import PrettyTable
+import sqlite3
 
 
-db = SQL("sqlite:///SanDamian.db")
+# Connect to database
+conn = sqlite3.connect('sanDamian.db')
+# Set the row factory to sqlite3.Row
+conn.row_factory = sqlite3.Row
+db = conn.cursor()
 
 
 class sdcExpenses:
@@ -24,7 +28,10 @@ class sdcExpenses:
                     (SELECT expenditureID FROM Expenditures WHERE expenditure = ?),
                     ?, ?
                 )
-        ''', date, student_name, expenditure, amount, description)
+        ''', (date, student_name, expenditure, amount, description))
+            # Commit changes
+            conn.commit()
+
         except Exception as e:
             print("Adding Expenses Unsuccessful")
             print(f"An Error occured: {e}")
@@ -38,7 +45,10 @@ class sdcExpenses:
             db.execute('''
             INSERT INTO Incomes (date, description, amount)
             VALUES (?, ?, ?)
-            ''', date, description, amount)
+            ''', (date, description, amount))
+            # Commit changes
+            conn.commit()
+
         except Exception as e:
             print("Adding Income Unsuccessful")
             print(f"An Error occured: {e}")
@@ -61,25 +71,31 @@ class sdcExpenses:
                 ORDER BY date DESC
         ''')
 
+        # Convert rows to a list of dictionaries
+        result = [dict(row) for row in rows]
+
+        return result
         # Create PrettyTable object
-        table = PrettyTable()
-        table.field_names = rows[0]
-        for row in rows:
-            record = row['date'], row['name'], row['amount'], row['type']
-            table.add_row(record)
+        # table = PrettyTable()
+        # table.field_names = rows[0]
+        # for row in rows:
+        #     record = row['date'], row['name'], row['amount'], row['type']
+        #     table.add_row(record)
 
-        print(table)
+        # print(table)
 
-        total = db.execute("SELECT SUM(amount) AS total FROM Expenses")
-        total_expenses = total[0]['total']
-        remaining_balance = self.total_income - total_expenses
-        print("Total Expenses: ", total_expenses)
-        print("Remainning Balance: ", remaining_balance)
+        # total = db.execute("SELECT SUM(amount) AS total FROM Expenses")
+        # total_expenses = total[0]['total']
+        # remaining_balance = self.total_income - total_expenses
+        # print("Total Expenses: ", total_expenses)
+        # print("Remainning Balance: ", remaining_balance)
 
 
     def display_incoming_table(self):
-        rows = db.execute("SELECT * FROM Incomes")
+        rows = db.execute("SELECT * FROM Incomes").fetchall()
 
+        # Convert rows to a list of dictionaries
+        result = [dict(row) for row in rows]
         # Create PrettyTable object
         # table = PrettyTable()
         # table.field_names = rows[0]
@@ -88,7 +104,7 @@ class sdcExpenses:
         #     table.add_row(record)
 
         # print(table)
-        return rows
+        return result
 
 
     def display_outgoings_table(self):
@@ -99,8 +115,12 @@ class sdcExpenses:
                 AND Expenses.expenditureID = Expenditures.expenditureID
                 GROUP BY date, name
                 ORDER By date DESC
-        ''')
-        return rows
+        ''').fetchall()
+        
+        # Convert rows to a list of dictionaries
+        result = [dict(row) for row in rows]
+
+        return result
         # Create PrettyTable object
         # table = PrettyTable()
         # table.field_names = rows[0]
@@ -118,8 +138,10 @@ class sdcExpenses:
             WHERE Expenses.studentID = Students.studentID
             AND Expenses.expenditureID = Expenditures.expenditureID
             AND name LIKE ?
-        ''', (f'%{name}%'))
+        ''', (f'%{name}%')).fetchall()
 
+        # Convert rows to a list of dictionaries
+        result = [dict(row) for row in rows]
         # Create PrettyTable object
         # table = PrettyTable()
         # table.field_names = rows[0]
@@ -129,17 +151,19 @@ class sdcExpenses:
 
         # print(table)
 
-        total = db.execute('''
+        totals = db.execute('''
             SELECT SUM(amount) AS total_amount
             FROM Expenses, Students
             WHERE Expenses.studentID = Students.studentID
             AND name LIKE ?
-        ''', (f'%{name}%'))
+        ''', (f'%{name}%')).fetchall()
+
+        total = [dict(total) for total in totals]
 
         total_amount = total[0]
         # print("\nTotal Amount: ", total_amount['total_amount'])
         # print(rows)
-        return rows, total_amount['total_amount']
+        return result, total_amount['total_amount']
 
 
 
@@ -147,16 +171,26 @@ class sdcExpenses:
         pass
 
     def display_students(self):
-        return db.execute("SELECT * FROM Students ORDER BY name ASC")
+        rows = db.execute("SELECT * FROM Students ORDER BY name ASC").fetchall()
+
+        # Convert rows to a list of dictionaries
+        result = [dict(row) for row in rows]
+        return result
     
 
     def get_expenditures(self):
-        return db.execute("SELECT expenditure FROM Expenditures")
+        rows = db.execute("SELECT expenditure FROM Expenditures").fetchall()
+
+        # Convert rows to a list of dictionaries
+        result = [dict(row) for row in rows]
+        return result
 
 
     def delete_student(self, name):
         try:
             db.execute("DELETE FROM Students WHERE name = ?", name)
+            # Commit changes
+            conn.commit()
         except Exception as e:
             print("Delete Unsuccessful")
             print(f"An Error occured: {e}")
@@ -171,7 +205,9 @@ class sdcExpenses:
             DELETE FROM Expenses
             WHERE date = ?
             AND studentID = (SELECT studentID FROM Students WHERE name = ?)
-            ''', date, name)
+            ''', (date, name))
+            # Commit changes
+            conn.commit()
         except Exception as e:
             print("Delete Unsuccessful")
             print(f"An Error occured: {e}")
