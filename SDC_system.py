@@ -109,13 +109,15 @@ class sdcExpenses:
 
     def display_outgoings_table(self):
         rows = db.execute('''
-            SELECT expenseID, date, name, SUM(amount) AS amount, expenditure
+            SELECT expenseID, date, name, SUM(amount) AS amount, 
+                GROUP_CONCAT(expenditure, ', ') AS expenditure
             FROM Expenses, Students, Expenditures  
-                WHERE Expenses.studentID = Students.studentID 
+            WHERE Expenses.studentID = Students.studentID 
                 AND Expenses.expenditureID = Expenditures.expenditureID
-                GROUP BY date, name
-                ORDER By date DESC
+            GROUP BY date, name
+            ORDER BY date DESC
         ''').fetchall()
+
         
         # Convert rows to a list of dictionaries
         result = [dict(row) for row in rows]
@@ -138,31 +140,22 @@ class sdcExpenses:
             WHERE Expenses.studentID = Students.studentID
             AND Expenses.expenditureID = Expenditures.expenditureID
             AND name LIKE ?
-        ''', (f'%{name}%')).fetchall()
+        ''', (f'%{name}%',)).fetchall()
 
         # Convert rows to a list of dictionaries
         result = [dict(row) for row in rows]
-        # Create PrettyTable object
-        # table = PrettyTable()
-        # table.field_names = rows[0]
-        # for row in rows:
-        #     record = row['date'], row['name'], row['expenditure'], row['amount'], row['description']
-        #     table.add_row(record)
-
-        # print(table)
 
         totals = db.execute('''
             SELECT SUM(amount) AS total_amount
             FROM Expenses, Students
             WHERE Expenses.studentID = Students.studentID
             AND name LIKE ?
-        ''', (f'%{name}%')).fetchall()
+        ''', (f'%{name}%',)).fetchall()
 
         total = [dict(total) for total in totals]
 
         total_amount = total[0]
-        # print("\nTotal Amount: ", total_amount['total_amount'])
-        # print(rows)
+        
         return result, total_amount['total_amount']
 
 

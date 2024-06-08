@@ -6,6 +6,11 @@ from ttkbootstrap.constants import *
 from SDC_system import sdcExpenses
 from tkinter import messagebox, simpledialog
 from ttkbootstrap.dialogs import Querybox
+import os
+import sys
+import pandas as pd
+import numpy as np
+from xlsxwriter.utility import xl_rowcol_to_cell
 
 
 sdc_expenses = sdcExpenses()
@@ -216,7 +221,7 @@ def homepage():
         add_expenses_window = tb.Toplevel(root)
         center_window(root, add_expenses_window, 400, 620)
         add_expenses_window.resizable(width=False, height=True)
-        add_expenses_window.iconbitmap("sds_TXb_icon.ico")
+        add_expenses_window.iconbitmap(resource_path('sds_icon.ico'))
 
         # new_expenses = tb.Frame(add_expenses_window)
         # new_expenses.pack(fill=X, expand=True, padx=30, pady=(0,20), side=tk.LEFT)
@@ -754,24 +759,71 @@ def search_page():
     total_amount_label.pack(side=LEFT, pady=30)
 
     update_listbox("")
-  
+
+
+
 
 def export_page():
     global main_frame
+
+    def export_report():
+        data = sdc_expenses.display_outgoings_table()
+        df = pd.DataFrame(data)
+        # df.to_excel("report.xlsx", index=False)
+
+        writer = pd.ExcelWriter('report.xlsx', engine='xlsxwriter')
+        df.to_excel(writer, index=False, sheet_name='report')
+        workbook = writer.book
+        worksheet = writer.sheets['report']
+
+        # Add formats for styling
+        header_format = workbook.add_format({'bold': True, 'align': 'center', 'bg_color': '#F7F7F7', 'border': 1})
+        data_format = workbook.add_format({'align': 'center', 'border': 1})
+
+        # Apply formats to headers and data
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+
+        for row_num in range(len(df)):
+            for col_num, value in enumerate(df.iloc[row_num]):
+                worksheet.write(row_num + 1, col_num, value, data_format)
+
+        # Auto-adjust column width
+        for i, col in enumerate(df.columns):
+            column_len = max(df[col].astype(str).str.len().max(), len(col))
+            worksheet.set_column(i, i, column_len + 2)
+
+        # Close the Pandas Excel writer and output the Excel file
+        writer.close()
+        messagebox.showinfo("Export Report", "Report exported successfully")
+
+
+
     # Main Frame
     main_frame.pack_forget()
     main_frame = tb.Frame(root)
     main_frame.pack(side=LEFT, fill=BOTH, expand=True)
 
-    test_label = tb.Label(main_frame, text="export Page")
-    test_label.pack(pady=50)
+    export_button = tb.Button(main_frame, text="Export Report", bootstyle="success", command=export_report)
+    export_button.pack(pady=60)
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 # Create the main application window
 root = tb.Window(themename="yeti")
 root.geometry("1360x768")
 root.title("San Damian System")
-root.iconbitmap("sds_TXb_icon.ico")
+root.iconbitmap(resource_path("sds_icon.ico"))
 
 # Configure the fonts
 style = tb.Style()
@@ -797,16 +849,16 @@ nav_frame = tb.Frame(root, padding=10, bootstyle="SUCCESS")
 nav_frame.pack(side=LEFT, fill=Y)
 
 # Load the image
-home_dark = PhotoImage(file="icons/home-regular-24.png")
-student_light = PhotoImage(file="icons/user-white.png")
-wallet_light = PhotoImage(file="icons/wallet-regular-24.png")
-search_light = PhotoImage(file="icons/search-regular-24.png")
-search_dark = PhotoImage(file="icons/search-dark-24.png")
-export_light = PhotoImage(file="icons/export-regular-24.png")
-delete_icon = PhotoImage(file="icons/trash-regular-36.png").subsample(2, 2)
-edit_icon = PhotoImage(file="icons/edit-solid-36.png")
-open_icon = PhotoImage(file="icons/door-open-solid-24.png")
-add_icon = PhotoImage(file="icons/plus-regular-24.png")
+home_dark = PhotoImage(file=resource_path("icons/home-regular-24.png"))
+student_light = PhotoImage(file=resource_path("icons/user-white.png"))
+wallet_light = PhotoImage(file=resource_path("icons/wallet-regular-24.png"))
+search_light = PhotoImage(file=resource_path("icons/search-regular-24.png"))
+search_dark = PhotoImage(file=resource_path("icons/search-dark-24.png"))
+export_light = PhotoImage(file=resource_path("icons/export-regular-24.png"))
+delete_icon = PhotoImage(file=resource_path("icons/trash-regular-36.png")).subsample(2, 2)
+edit_icon = PhotoImage(file=resource_path("icons/edit-solid-36.png"))
+open_icon = PhotoImage(file=resource_path("icons/door-open-solid-24.png"))
+add_icon = PhotoImage(file=resource_path("icons/plus-regular-24.png"))
 
 
 tb.Button(nav_frame, text="Home", bootstyle=SUCCESS, image=home_dark, compound=tk.LEFT, command=homepage, style="but.success.TButton").pack(fill=X, pady=5)
