@@ -74,21 +74,70 @@ def homepage():
         for row in table.get_children():
             table.delete(row)
         for index, entry in enumerate(data):
-            table.insert("", "end", iid=index, values=(f'                   {entry["date"]}', entry["name"], entry["amount"], entry["expenditure"]))
+            table.insert("", "end", iid=index, values=(f'                   {entry["date"]}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
 
 
     # Functions
-    def on_open_details(details):
+    def on_open_details(index):
         def show_details():
-            messagebox.showinfo("Expenditure Details", details)
+            view_window = tb.Toplevel(root)
+            center_window(root, view_window, 440, 400)
+            # view_window.resizable(width=False, height=True)
+            view_window.iconbitmap(resource_path('sds_icon.ico'))
+
+            details_data = sdc_expenses.get_info(data[index]["expenseIDs"])
+
+
+
+            # tb.Label(view_window, text="Expenditure Details", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
+            scrollbar = VerticalScrolledFrame(view_window)
+            scrollbar.pack(fill=BOTH, expand=True)
+
+            view_frame = tb.Frame(scrollbar.interior)
+            view_frame.pack(fill=X, expand=True, padx=30, pady=(0,20), side=tk.LEFT)
+            tb.Label(view_frame, text="Expenditure Details", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).grid(row=0, column=1, columnspan=2)
+
+
+            tb.Label(view_frame, image=calendar_icon).grid(row=1, column=0, sticky="w")
+            tb.Label(view_frame, image=name_icon).grid(row=2, column=0, sticky="w")
+            tb.Label(view_frame, image=expenditure_icon).grid(row=3, column=0, sticky="w")
+            tb.Label(view_frame, text="Date", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=1, column=1, sticky="w")
+            tb.Label(view_frame, text="Name", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=2, column=1, sticky="w")
+            tb.Label(view_frame, text="Expenditure", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=1, sticky="w")
+            tb.Label(view_frame, text="Amount", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=2, sticky="e")
+
+            tb.Label(view_frame, text=data[index]['date'], bootstyle=DARK, font=('Poppins', 11)).grid(row=1, column=2, sticky="e")
+            tb.Label(view_frame, text=data[index]['name'], bootstyle=DARK, font=('Poppins', 11)).grid(row=2, column=2, sticky="e")
+
+            i = 0
+            for i, detail in enumerate(details_data):
+                tb.Label(view_frame, text=detail['expenditure'], bootstyle=DARK, font=('Poppins', 11)).grid(row=4+i, column=1, sticky="w")
+                tb.Label(view_frame, text=detail['amount'], bootstyle=DARK, font=('Poppins', 11)).grid(row=4+i, column=2, sticky="e")
+                
+
+            tb.Label(view_frame, text="-----------------------------------------", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=5+i, column=1, sticky="w", columnspan=2)
+            tb.Label(view_frame, text="TOTAL", bootstyle=DARK, font=('Poppins', 12, 'bold')).grid(row=6+i, column=1, sticky="w")
+            tb.Label(view_frame, text=data[index]['amount'], bootstyle=DARK, font=('Poppins', 12, 'bold')).grid(row=6+i, column=2, sticky="e")
+            tb.Label(view_frame, image=details_icon).grid(row=7+i, column=0, sticky="w")
+            tb.Label(view_frame, text="Description", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=7+i, column=1, sticky="w")
+            tb.Label(view_frame, text=data[index]['description'], bootstyle=DARK, font=('Poppins', 11), wraplength=340).grid(row=8+i, column=1, columnspan=3, sticky="w")
+
+
+            # print(details_data)
+
+            
+
+
         return show_details
 
     def on_delete(row_index):
         def confirm_delete():
             if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this entry?"):
 
-                # print(data[row_index]["expenseID"])
-                sdc_expenses.delete_expense(data[row_index]["date"], data[row_index]["name"])
+                # print(data[row_index]["expenseIDs"])
+                # sdc_expenses.delete_expense(data[row_index]["date"], data[row_index]["name"])
+                sdc_expenses.delete_expense(data[row_index]["expenseIDs"])
+                
                 # refresh_table()
                 homepage()
         return confirm_delete
@@ -111,7 +160,7 @@ def homepage():
                 index = int(row_id)
                 delete_button = tb.Button(table,image=delete_icon, command=on_delete(index), bootstyle="link")
                 edit_button = tb.Button(table,image=edit_icon, command=on_edit(index), bootstyle="link")
-                open_button = tb.Button(table, text="OPEN", image=open_icon, compound=tk.LEFT, command=on_open_details(data[index]["expenditure"]), bootstyle="secondary-link", style="secondary.Link.TButton")
+                open_button = tb.Button(table, text="OPEN", image=open_icon, compound=tk.LEFT, command=on_open_details(index), bootstyle="secondary-link", style="secondary.Link.TButton")
                 bbox = table.bbox(row_id)
                 edit_button.place(x=bbox[0] + 30, y=bbox[1]-4)
                 delete_button.place(x=bbox[0], y=bbox[1]-4)
@@ -169,21 +218,21 @@ def homepage():
         date_text = date.entry.get()
 
         if name_box.get() == "":
-            messagebox.showerror("Error", "Please select a student")
+            messagebox.showerror("Error", "Please select a student", parent=add_expenses_window)
             return
         # print(f'Name: {name_box.get()}')
         name = name_box.get()
 
         for idx, combobox in enumerate(comboboxes):
             if combobox.get() == "":
-                messagebox.showerror("Error", "Please select an expenditure")
+                messagebox.showerror("Error", "Please select an expenditure", parent=add_expenses_window)
                 return
             # print(f"Combobox {idx} selected value: {combobox.get()}")
             expenditures.append(combobox.get())
 
         for idx, entry in enumerate(amount_boxes):
             if entry.get() == "":
-                messagebox.showerror("Error", "Please enter an amount")
+                messagebox.showerror("Error", "Please enter an amount", parent=add_expenses_window)
                 return
             # print(f"Entry {idx} amount: {entry.get()}")
             amounts.append(entry.get())
@@ -288,6 +337,9 @@ def homepage():
         remaining_balance_label.config(text=f"Remaining Balance:    {remaining_balance}")
         total_expenditures_label.config(text=f"Total Expenditures:     {total_expenditures}")
 
+
+    
+
     # Data
     data = sdc_expenses.display_outgoings_table()
 
@@ -302,29 +354,38 @@ def homepage():
 
     # Sort Month
     months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    month_menu = tb.Combobox(header_frame, values=months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    month_var = tk.StringVar()
+    month_menu = tb.Combobox(header_frame, textvariable=month_var, values=months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     month_menu.pack(side=LEFT, padx=20)
     month_menu.current(0)   
 
     # Sort By Name, Date, Amount
-    sort_menu = tb.Combobox(header_frame, values=["Date", "Name", "Amount"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    sort_var = tk.StringVar()
+    sort_menu = tb.Combobox(header_frame, textvariable=sort_var, values=["Date", "Name", "Amount"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     sort_menu.pack(side=LEFT, padx=20)
     sort_menu.current(0)
 
-    asc_desc_menu = tb.Combobox(header_frame, values=["Ascending", "Descending"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    order_var = tk.StringVar()  
+    asc_desc_menu = tb.Combobox(header_frame, textvariable=order_var, values=["Ascending", "Descending"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     asc_desc_menu.pack(side=LEFT, padx=20)
     asc_desc_menu.current(1)
 
     # Table
     table_frame = tb.Frame(main_frame)
     table_frame.pack(fill=BOTH, expand=True, padx=50, pady=1)
-    columns = ("Date", "Name", "Amount", "Expenditures")
+    columns = ("Date", "Name", "Amount", "Expenditures", "Description")
     table = tb.Treeview(table_frame, columns=columns, show="headings")
     table.heading("Date", text="Date")
     table.heading("Name", text="Name")
     table.heading("Amount", text="Amount")
     table.heading("Expenditures", text="Expenditures")
+    table.heading("Description", text="Description")
     table.column("Amount", anchor="center")
+
+
+    month_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, table, month_var, sort_var, order_var))
+
+
 
     refresh_table()
 
@@ -859,6 +920,11 @@ delete_icon = PhotoImage(file=resource_path("icons/trash-regular-36.png")).subsa
 edit_icon = PhotoImage(file=resource_path("icons/edit-solid-36.png"))
 open_icon = PhotoImage(file=resource_path("icons/door-open-solid-24.png"))
 add_icon = PhotoImage(file=resource_path("icons/plus-regular-24.png"))
+calendar_icon = PhotoImage(file=resource_path('icons/calendar-regular-24.png'))
+name_icon = PhotoImage(file=resource_path('icons/user-circle-regular-24.png'))
+details_icon = PhotoImage(file=resource_path('icons\menu-regular-24.png'))
+expenditure_icon = PhotoImage(file=resource_path('icons\wallet-gray.png'))
+
 
 
 tb.Button(nav_frame, text="Home", bootstyle=SUCCESS, image=home_dark, compound=tk.LEFT, command=homepage, style="but.success.TButton").pack(fill=X, pady=5)

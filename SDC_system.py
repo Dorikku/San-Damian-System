@@ -109,11 +109,11 @@ class sdcExpenses:
 
     def display_outgoings_table(self):
         rows = db.execute('''
-            SELECT expenseID, date, name, SUM(amount) AS amount, 
-                GROUP_CONCAT(expenditure, ', ') AS expenditure
-            FROM Expenses, Students, Expenditures  
-            WHERE Expenses.studentID = Students.studentID 
-                AND Expenses.expenditureID = Expenditures.expenditureID
+            SELECT GROUP_CONCAT(expenseID) AS expenseIDs, date, IFNULL(name, '') AS name, SUM(amount) AS amount, 
+                GROUP_CONCAT(expenditure, ', ') AS expenditure, description
+            FROM Expenses
+            LEFT JOIN Students ON Expenses.studentID = Students.studentID
+            LEFT JOIN Expenditures ON Expenses.expenditureID = Expenditures.expenditureID
             GROUP BY date, name
             ORDER BY date DESC
         ''').fetchall()
@@ -121,6 +121,7 @@ class sdcExpenses:
         
         # Convert rows to a list of dictionaries
         result = [dict(row) for row in rows]
+    
 
         return result
         # Create PrettyTable object
@@ -192,15 +193,26 @@ class sdcExpenses:
             pass
 
     
-    def delete_expense(self, date, name):
+    def delete_expense(self, expenseIDs):
         try:
-            db.execute('''
-            DELETE FROM Expenses
-            WHERE date = ?
-            AND studentID = (SELECT studentID FROM Students WHERE name = ?)
-            ''', (date, name))
-            # Commit changes
-            conn.commit()
+            # db.execute('''
+            # DELETE FROM Expenses
+            # WHERE date = ?
+            # AND studentID = (SELECT studentID FROM Students WHERE name = ?)
+            # ''', (date, name))
+            # conn.commit()
+            # The string containing comma-separated integers
+
+            # Split the string into a list of substrings
+            ID_list = expenseIDs.split(',')
+            
+            for integer in ID_list:
+                db.execute('''
+                DELETE FROM Expenses
+                WHERE expenseID = ?
+                ''', (integer,))
+                conn.commit()
+
         except Exception as e:
             print("Delete Unsuccessful")
             print(f"An Error occured: {e}")
@@ -208,4 +220,28 @@ class sdcExpenses:
             # print("Successfully deleted the expense")
             pass
         
+
+    def get_info(self, index):
+        try:
+            index_list = index.split(',')
+            placeholders = ','.join('?' for _ in index_list)
+
+            query = f'''
+                SELECT * FROM Expenses, Expenditures
+                WHERE expenseID IN ({placeholders})
+                AND Expenses.expenditureID = Expenditures.expenditureID
+            '''
+
+            # Execute the query with the list of IDs
+            rows = db.execute(query, index_list).fetchall()
+
+            # rows = db.execute('''
+            #     SELECT * FROM Expenses
+            #     WHERE expenseID IN (?)
+            # ''', (index,)).fetchall()
+            result = [dict(row) for row in rows]
+            return result
         
+        except Exception as e:
+            print("An Error occured: ", e)
+            return None
