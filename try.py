@@ -4,16 +4,25 @@ from datetime import datetime
 
 # Sample data
 data = [
-    {"name": "Alice", "date": "2023-06-20"},
-    {"name": "Bob", "date": "2023-06-21"},
-    {"name": "Charlie", "date": "2023-06-19"},
-    {"name": "David", "date": "2023-06-23"},
-    {"name": "Eve", "date": "2023-06-22"}
+    {"name": "Alice", "date": "6/20/2023"},
+    {"name": "Bob", "date": "6/20/2023"},
+    {"name": "Charlie", "date": "6/20/2023"},
+    {"name": "David", "date": "6/20/2023"},
+    {"name": "Eve", "date": "6/20/2023"},
+    {"name": "Fuck", "date": "7/20/2023"}
 ]
 
 # Convert date strings to datetime objects for sorting
 for item in data:
-    item["date"] = datetime.strptime(item["date"], "%Y-%m-%d")
+    item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
+
+# Function to get the month name and year in the desired format
+def get_month_year_string(date):
+    return date.strftime("%B %Y")
+
+# Extract unique months and years from the data
+unique_months = list(set([get_month_year_string(item["date"]) for item in data]))
+unique_months.sort(key=lambda date: datetime.strptime(date, "%B %Y"))
 
 def load_data(treeview, data):
     # Clear existing data
@@ -22,35 +31,34 @@ def load_data(treeview, data):
     
     # Insert new data
     for item in data:
-        treeview.insert("", tk.END, values=(item["name"], item["date"].strftime("%Y-%m-%d")))
+        treeview.insert("", tk.END, values=(item["name"], item["date"].strftime("%m/%d/%Y")))
 
-def apply_filter_sort(treeview, date_var, sort_order_var):
-    selected_date = date_var.get()
+def apply_filter_sort(treeview, month_var, sort_order_var):
+    selected_month = month_var.get()
     sort_order = sort_order_var.get()
 
     filtered_data = data
-    if selected_date != "All":
-        filtered_data = [item for item in data if item["date"].strftime("%Y-%m-%d") == selected_date]
+    if selected_month != "All":
+        selected_month_datetime = datetime.strptime(selected_month, "%B %Y")
+        filtered_data = [item for item in data if item["date"].year == selected_month_datetime.year and item["date"].month == selected_month_datetime.month]
 
     sorted_data = sorted(filtered_data, key=lambda x: x["date"], reverse=(sort_order == "Descending"))
 
     load_data(treeview, sorted_data)
 
-def on_combobox_change(event, treeview, date_var, sort_order_var):
-    apply_filter_sort(treeview, date_var, sort_order_var)
+def on_combobox_change(event, treeview, month_var, sort_order_var):
+    apply_filter_sort(treeview, month_var, sort_order_var)
 
 # Main application
 root = tk.Tk()
 root.title("Treeview Filter and Sort")
 
-# Combobox for date selection
-dates = list(set([item["date"].strftime("%Y-%m-%d") for item in data]))
-dates.sort()
-date_var = tk.StringVar()
-date_combobox = ttk.Combobox(root, textvariable=date_var)
-date_combobox['values'] = ["All"] + dates
-date_combobox.current(0)
-date_combobox.pack(pady=10)
+# Combobox for month selection
+month_var = tk.StringVar()
+month_combobox = ttk.Combobox(root, textvariable=month_var)
+month_combobox['values'] = ["All"] + unique_months
+month_combobox.current(0)
+month_combobox.pack(pady=10)
 
 # Combobox for sort order selection
 sort_order_var = tk.StringVar()
@@ -66,8 +74,8 @@ treeview.heading("Date", text="Date")
 treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
 # Bind events to comboboxes to trigger automatic filtering and sorting
-date_combobox.bind("<<ComboboxSelected>>", lambda event: on_combobox_change(event, treeview, date_var, sort_order_var))
-sort_order_combobox.bind("<<ComboboxSelected>>", lambda event: on_combobox_change(event, treeview, date_var, sort_order_var))
+month_combobox.bind("<<ComboboxSelected>>", lambda event: on_combobox_change(event, treeview, month_var, sort_order_var))
+sort_order_combobox.bind("<<ComboboxSelected>>", lambda event: on_combobox_change(event, treeview, month_var, sort_order_var))
 
 # Load initial data
 load_data(treeview, data)

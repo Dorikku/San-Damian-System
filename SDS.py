@@ -11,6 +11,8 @@ import sys
 import pandas as pd
 import numpy as np
 from xlsxwriter.utility import xl_rowcol_to_cell
+from datetime import datetime
+
 
 
 sdc_expenses = sdcExpenses()
@@ -70,11 +72,11 @@ def homepage():
     global main_frame, hovered_row
     # , table, total_expenditures_label, base_income_label, remaining_balance_label, base_income, data
 
-    def refresh_table():
+    def refresh_table(table_data):
         for row in table.get_children():
             table.delete(row)
-        for index, entry in enumerate(data):
-            table.insert("", "end", iid=index, values=(f'                   {entry["date"]}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
+        for index, entry in enumerate(table_data):
+            table.insert("", "end", iid=index, values=(f'                   {entry["date"].strftime("%m/%d/%Y")}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
 
 
     # Functions
@@ -106,7 +108,7 @@ def homepage():
             tb.Label(view_frame, text="Expenditure", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=1, sticky="w")
             tb.Label(view_frame, text="Amount", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=2, sticky="e")
 
-            tb.Label(view_frame, text=data[index]['date'], bootstyle=DARK, font=('Poppins', 11)).grid(row=1, column=2, sticky="e")
+            tb.Label(view_frame, text=data[index]['date'].strftime("%m/%d/%Y"), bootstyle=DARK, font=('Poppins', 11)).grid(row=1, column=2, sticky="e")
             tb.Label(view_frame, text=data[index]['name'], bootstyle=DARK, font=('Poppins', 11)).grid(row=2, column=2, sticky="e")
 
             i = 0
@@ -328,20 +330,51 @@ def homepage():
         new_income = simpledialog.askfloat("Base Balance", "Enter new base income:")
         if new_income is not None:
             base_income.set(new_income)
-            update_highlights()
+            update_highlights(data)
 
-    def update_highlights():
-        total_expenditures = sum(entry["amount"] for entry in data)
+    def update_highlights(sorted_data):
+        total_expenditures = sum(entry["amount"] for entry in sorted_data)
         remaining_balance = base_income.get() - total_expenditures
         base_income_label.config(text=f"Base Balance:    {base_income.get()}")
         remaining_balance_label.config(text=f"Remaining Balance:    {remaining_balance}")
         total_expenditures_label.config(text=f"Total Expenditures:     {total_expenditures}")
 
 
+    def apply_filter_sort(table, month_var, sort_var, order_var):
+        month = month_var.get()
+        sort = sort_var.get()
+        order = order_var.get()
+
+        filtered_data = data
+        if month != "All":
+            month_datetime = datetime.strptime(month, "%B %Y")
+            filtered_data = [item for item in data if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
+
+        if sort == "Name":
+            sorted_data = sorted(filtered_data, key=lambda x: x["name"], reverse=(order == "Descending"))
+        elif sort == "Amount":
+            sorted_data = sorted(filtered_data, key=lambda x: x["amount"], reverse=(order == "Descending"))
+        else:
+            sorted_data = sorted(filtered_data, key=lambda x: x["date"], reverse=(order == "Descending"))
+
+        # load_data(treeview, sorted_data)
+        refresh_table(sorted_data)
+        update_highlights(sorted_data)
+
+    def on_combobox_change(event, table, month_var, sort_var, order_var):
+        apply_filter_sort(table, month_var, sort_var, order_var)
+
+    # Function to get the month name and year in the desired format
+    def get_month_year_string(date):
+        return date.strftime("%B %Y")
     
 
     # Data
     data = sdc_expenses.display_outgoings_table()
+
+    # Convert date strings to datetime objects for sorting
+    for item in data:
+        item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
 
     # Main Frame
     main_frame.pack_forget()
@@ -352,10 +385,14 @@ def homepage():
     header_frame = tb.Frame(main_frame)
     header_frame.pack(fill=X, pady=10, padx=30)
 
+
+    # Extract unique months and years from the data
+    unique_months = list(set([get_month_year_string(item["date"]) for item in data]))
+    unique_months.sort(key=lambda date: datetime.strptime(date, "%B %Y"))
     # Sort Month
-    months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    # months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     month_var = tk.StringVar()
-    month_menu = tb.Combobox(header_frame, textvariable=month_var, values=months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    month_menu = tb.Combobox(header_frame, textvariable=month_var, values=["All"] + unique_months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     month_menu.pack(side=LEFT, padx=20)
     month_menu.current(0)   
 
@@ -384,10 +421,11 @@ def homepage():
 
 
     month_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, table, month_var, sort_var, order_var))
+    sort_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, table, month_var, sort_var, order_var))
+    asc_desc_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, table, month_var, sort_var, order_var))
 
 
-
-    refresh_table()
+    refresh_table(data)
 
     table.pack(side=tk.LEFT, fill=BOTH, expand=True)
 
@@ -436,7 +474,7 @@ def homepage():
 
 
 
-    update_highlights()
+    update_highlights(data)
 
 
 def students_page():
