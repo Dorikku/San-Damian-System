@@ -68,6 +68,31 @@ class VerticalScrolledFrame(ttk.Frame):
         canvas.bind('<Configure>', _configure_canvas)
 
 
+def center_window(parent, window, width, height):
+    # Get the parent's dimensions and position
+    parent_x = parent.winfo_x()
+    parent_y = parent.winfo_y()
+    parent_width = parent.winfo_width()
+    parent_height = parent.winfo_height()
+
+    # Calculate the x and y coordinates to center the window relative to the parent
+    x = parent_x + (parent_width // 2) - (width // 2)
+    y = parent_y + (parent_height // 2) - (height // 2)
+
+    # Set the geometry of the window to center it
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
+
+def validate_float(value_if_allowed):
+        if value_if_allowed == "":
+            return True
+        try:
+            float(value_if_allowed)
+            return True
+        except ValueError:
+            return False
+
+
 def homepage():
     global main_frame, hovered_row
     # , table, total_expenditures_label, base_income_label, remaining_balance_label, base_income, data
@@ -77,6 +102,7 @@ def homepage():
             table.delete(row)
         for index, entry in enumerate(table_data):
             table.insert("", "end", iid=index, values=(f'                   {entry["date"].strftime("%m/%d/%Y")}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
+         
 
 
     # Functions
@@ -87,8 +113,10 @@ def homepage():
             # view_window.resizable(width=False, height=True)
             view_window.iconbitmap(resource_path('sds_icon.ico'))
 
-            details_data = sdc_expenses.get_info(data[index]["expenseIDs"])
-
+            details_data = sdc_expenses.get_info(sorted_data[index]["expenseIDs"])
+            # Convert date strings to datetime objects for sorting
+            for item in details_data:
+                item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
 
 
             # tb.Label(view_window, text="Expenditure Details", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
@@ -108,8 +136,8 @@ def homepage():
             tb.Label(view_frame, text="Expenditure", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=1, sticky="w")
             tb.Label(view_frame, text="Amount", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=2, sticky="e")
 
-            tb.Label(view_frame, text=data[index]['date'].strftime("%m/%d/%Y"), bootstyle=DARK, font=('Poppins', 11)).grid(row=1, column=2, sticky="e")
-            tb.Label(view_frame, text=data[index]['name'], bootstyle=DARK, font=('Poppins', 11)).grid(row=2, column=2, sticky="e")
+            tb.Label(view_frame, text=details_data[0]['date'].strftime("%m/%d/%Y"), bootstyle=DARK, font=('Poppins', 11)).grid(row=1, column=2, sticky="e")
+            tb.Label(view_frame, text=details_data[0]['name'], bootstyle=DARK, font=('Poppins', 11)).grid(row=2, column=2, sticky="e")
 
             i = 0
             for i, detail in enumerate(details_data):
@@ -119,10 +147,10 @@ def homepage():
 
             tb.Label(view_frame, text="-----------------------------------------", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=5+i, column=1, sticky="w", columnspan=2)
             tb.Label(view_frame, text="TOTAL", bootstyle=DARK, font=('Poppins', 12, 'bold')).grid(row=6+i, column=1, sticky="w")
-            tb.Label(view_frame, text=data[index]['amount'], bootstyle=DARK, font=('Poppins', 12, 'bold')).grid(row=6+i, column=2, sticky="e")
+            tb.Label(view_frame, text=sum(item['amount'] for item in details_data), bootstyle=DARK, font=('Poppins', 12, 'bold')).grid(row=6+i, column=2, sticky="e")
             tb.Label(view_frame, image=details_icon).grid(row=7+i, column=0, sticky="w")
             tb.Label(view_frame, text="Description", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=7+i, column=1, sticky="w")
-            tb.Label(view_frame, text=data[index]['description'], bootstyle=DARK, font=('Poppins', 11), wraplength=340).grid(row=8+i, column=1, columnspan=3, sticky="w")
+            tb.Label(view_frame, text=details_data[0]['description'], bootstyle=DARK, font=('Poppins', 11), wraplength=340).grid(row=8+i, column=1, columnspan=3, sticky="w")
 
 
             # print(details_data)
@@ -183,14 +211,6 @@ def homepage():
     def do_nothing(event):
         return "break"
 
-    def validate_float(value_if_allowed):
-        if value_if_allowed == "":
-            return True
-        try:
-            float(value_if_allowed)
-            return True
-        except ValueError:
-            return False
 
     def add_expenditure():
         # frame for entry
@@ -222,6 +242,9 @@ def homepage():
         if name_box.get() == "":
             messagebox.showerror("Error", "Please select a student", parent=add_expenses_window)
             return
+        elif name_box.get() not in [student["name"] for student in sdc_expenses.display_students()]:
+            sdc_expenses.add_student(name_box.get())
+            # print(name_box.get())
         # print(f'Name: {name_box.get()}')
         name = name_box.get()
 
@@ -229,7 +252,11 @@ def homepage():
             if combobox.get() == "":
                 messagebox.showerror("Error", "Please select an expenditure", parent=add_expenses_window)
                 return
-            # print(f"Combobox {idx} selected value: {combobox.get()}")
+            elif combobox.get() not in [entry["expenditure"] for entry in expenditures_data]:
+                # sdc_expenses.add_expenditure(combobox.get())
+                messagebox.showerror("Error", "Please select an expenditure", parent=add_expenses_window)
+                return
+           
             expenditures.append(combobox.get())
 
         for idx, entry in enumerate(amount_boxes):
@@ -252,19 +279,6 @@ def homepage():
         add_expenses_window.destroy() 
         add_new_entry()
 
-    def center_window(parent, window, width, height):
-        # Get the parent's dimensions and position
-        parent_x = parent.winfo_x()
-        parent_y = parent.winfo_y()
-        parent_width = parent.winfo_width()
-        parent_height = parent.winfo_height()
-
-        # Calculate the x and y coordinates to center the window relative to the parent
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-
-        # Set the geometry of the window to center it
-        window.geometry(f"{width}x{height}+{x}+{y}")
 
     def add_new_entry():
         global expenses_frame, comboboxes, expenditures_data, add_expenses_window, amount_boxes, description_box, name_box, date
@@ -326,29 +340,40 @@ def homepage():
 
 
 
-    def update_base_income():
-        new_income = simpledialog.askfloat("Base Balance", "Enter new base income:")
-        if new_income is not None:
-            base_income.set(new_income)
-            update_highlights(data)
+    # def update_base_income():
+    #     new_income = simpledialog.askfloat("Base Balance", "Enter new base income:")
+    #     if new_income is not None:
+    #         base_income.set(new_income)
+    #         update_highlights(data)
 
-    def update_highlights(sorted_data):
-        total_expenditures = sum(entry["amount"] for entry in sorted_data)
-        remaining_balance = base_income.get() - total_expenditures
+    def update_highlights(dat, fil_incom):
+        total_expenditures = sum(entry["amount"] for entry in dat)
+
+        base_in = sum(entry["amount"] for entry in fil_incom)
+
+        base_income.set(base_in)
+
+        # remaining_balance = base_income.get() - total_expenditures
+        remaining_balance = base_in - total_expenditures
         base_income_label.config(text=f"Base Balance:    {base_income.get()}")
         remaining_balance_label.config(text=f"Remaining Balance:    {remaining_balance}")
         total_expenditures_label.config(text=f"Total Expenditures:     {total_expenditures}")
 
 
-    def apply_filter_sort(table, month_var, sort_var, order_var):
+    def apply_filter_sort(month_var, sort_var, order_var):
+        global sorted_data
         month = month_var.get()
         sort = sort_var.get()
         order = order_var.get()
 
         filtered_data = data
+        filtered_income = incomings
+
+        # filtered_data = sdc_expenses.display_outgoings_table()
         if month != "All":
             month_datetime = datetime.strptime(month, "%B %Y")
             filtered_data = [item for item in data if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
+            filtered_income = [item for item in incomings if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
 
         if sort == "Name":
             sorted_data = sorted(filtered_data, key=lambda x: x["name"], reverse=(order == "Descending"))
@@ -359,10 +384,11 @@ def homepage():
 
         # load_data(treeview, sorted_data)
         refresh_table(sorted_data)
-        update_highlights(sorted_data)
+        update_highlights(sorted_data, filtered_income)
+        # data = sorted_data
 
-    def on_combobox_change(event, table, month_var, sort_var, order_var):
-        apply_filter_sort(table, month_var, sort_var, order_var)
+    def on_combobox_change(event, month_var, sort_var, order_var):
+        apply_filter_sort(month_var, sort_var, order_var)
 
     # Function to get the month name and year in the desired format
     def get_month_year_string(date):
@@ -371,6 +397,7 @@ def homepage():
 
     # Data
     data = sdc_expenses.display_outgoings_table()
+    # sorted_data = data
 
     # Convert date strings to datetime objects for sorting
     for item in data:
@@ -420,12 +447,14 @@ def homepage():
     table.column("Amount", anchor="center")
 
 
-    month_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, table, month_var, sort_var, order_var))
-    sort_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, table, month_var, sort_var, order_var))
-    asc_desc_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, table, month_var, sort_var, order_var))
-
+    month_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, month_var, sort_var, order_var))
+    sort_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, month_var, sort_var, order_var))
+    asc_desc_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, month_var, sort_var, order_var))
 
     refresh_table(data)
+    
+    # sorted_data = data
+
 
     table.pack(side=tk.LEFT, fill=BOTH, expand=True)
 
@@ -459,12 +488,17 @@ def homepage():
     new_button.pack(fill=X, pady=2)
 
 
-    base_income = tk.DoubleVar(value=50000)
+    # base_income = tk.DoubleVar(value=50000)
+    incomings = sdc_expenses.display_incoming_table()
+    for item in incomings:
+        item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
+
+    base_income = tk.DoubleVar(value=sum(entry["amount"] for entry in incomings))
     base_income_label = tb.Label(highlight_frame, text=f"Base Balance: {base_income.get()}", bootstyle=DARK)
     base_income_label.pack(side=LEFT, pady=30)
-    base_income_label.bind("<Enter>", lambda e: base_income_label.config(bootstyle=DANGER))
-    base_income_label.bind("<Leave>", lambda e: base_income_label.config(bootstyle=DARK))
-    base_income_label.bind("<Button-1>", lambda e: update_base_income())
+    # base_income_label.bind("<Enter>", lambda e: base_income_label.config(bootstyle=DANGER))
+    # base_income_label.bind("<Leave>", lambda e: base_income_label.config(bootstyle=DARK))
+    # base_income_label.bind("<Button-1>", lambda e: update_base_income())
 
     remaining_balance_label = tb.Label(highlight_frame, text="Remaining Balance: ", bootstyle=DARK)
     remaining_balance_label.pack(side=LEFT, padx=60)
@@ -474,7 +508,9 @@ def homepage():
 
 
 
-    update_highlights(data)
+    update_highlights(data, incomings)
+    apply_filter_sort(month_var, sort_var, order_var)   # Handles the initial sorting and filtering
+
 
 
 def students_page():
@@ -621,7 +657,7 @@ def incomings_page():
         for row in table.get_children():
             table.delete(row)
         for index, entry in enumerate(data):
-            table.insert("", "end", iid=index, values=(entry["date"], entry["description"], entry["amount"]))
+            table.insert("", "end", iid=index, values=(f'                  {entry["date"]}', entry["description"], f'          {entry["amount"]}'))
 
 
     def on_hover(event):
@@ -676,8 +712,67 @@ def incomings_page():
         return edit_entry
 
 
+    def refresh(date, description_box, amount_entry):
+
+        # get the date
+        date_text = date.entry.get()
+
+        # get the description
+        if description_box.get("1.0", tk.END) == "\n":
+            messagebox.showerror("Error", "Please enter an amount", parent=add_expenses_window)
+            return
+        description = description_box.get("1.0", tk.END)
+
+        # get the amount
+        if amount_entry.get() == "":
+            messagebox.showerror("Error", "Please enter an amount", parent=add_expenses_window)
+            return
+        amount = amount_entry.get()
+
+        sdc_expenses.add_income(date_text, description, amount)
+
+        # Update table
+        incomings_page()
+        add_expenses_window.destroy()
+        add_new_entry()
+
+
     def add_new_entry():
-        new_date = simpledialog.askstring("New Entry", "Enter Date:")
+        global add_expenses_window
+        # new_date = simpledialog.askstring("New Entry", "Enter Date:")
+        add_expenses_window = tb.Toplevel(root)
+        center_window(root, add_expenses_window, 400, 500)
+        add_expenses_window.resizable(width=False, height=True)
+        add_expenses_window.iconbitmap(resource_path('sds_icon.ico'))
+
+        # new_expenses = tb.Frame(add_expenses_window)
+        # new_expenses.pack(fill=X, expand=True, padx=30, pady=(0,20), side=tk.LEFT)
+        scrollbar = VerticalScrolledFrame(add_expenses_window)
+        scrollbar.pack(fill=BOTH, expand=True)
+
+        new_expenses = tb.Frame(scrollbar.interior)
+        new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20), side=tk.LEFT)
+
+
+        tb.Label(new_expenses, text="Add Income", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
+        
+        tb.Label(new_expenses, text="Date: ", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+        date = tb.DateEntry(new_expenses, bootstyle=SUCCESS)  
+        date.pack(fill=X, expand=True, pady=(0, 15))
+        date.entry.configure(font=('Poppins', 11), bootstyle=DARK)
+
+        tb.Label(new_expenses, text="Description:", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+
+        description_box = tb.Text(new_expenses, height=2, font=('Poppins', 11))
+        description_box.pack(fill=X, expand=True, pady=(0, 15))
+
+        tb.Label(new_expenses, text="Amount:", bootstyle="DARK", font=('Poppins', 11)).pack(fill=X)
+        vcmd = (new_expenses.register(validate_float), '%P')
+        amount_entry = tb.Entry(new_expenses, bootstyle=DARK, font=('Poppins', 11), validate='key', validatecommand=vcmd)
+        amount_entry.pack(fill=X, expand=True, pady=(0, 15))
+
+        submit_button = tb.Button(new_expenses, text="Submit", bootstyle=SUCCESS, command=lambda: refresh(date, description_box, amount_entry))
+        submit_button.pack(fill=X)
 
 
     # Data
@@ -709,7 +804,9 @@ def incomings_page():
     table.heading("description", text="Description")
     table.heading("amount", text="Amount")
     table.pack(side=tk.LEFT, fill=BOTH, expand=True)
-    table.column("date", anchor="center")
+    table.column("date", anchor="w")
+    table.column("description", width=500)
+    # table.column("amount", width=20)
 
     # Binding mouse click events to do_nothing function
     table.bind("<Button-1>", do_nothing)  # Left click

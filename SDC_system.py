@@ -14,7 +14,9 @@ class sdcExpenses:
         self.total_income = 50000
     
     def add_student(self, name):
-        db.execute("INSERT INTO Students (name) VALUES (?)", name)
+        db.execute("INSERT INTO Students (name) VALUES (?)", (name,))
+        conn.commit()
+
         print("Successfully added the student")
 
 
@@ -55,6 +57,18 @@ class sdcExpenses:
         else:
             print("Successfully added the income")
             
+
+    def add_expenditure(self, expenditure):
+        try:
+            db.execute("INSERT INTO Expenditures (expenditure) VALUES (?)", (expenditure,))
+            conn.commit()
+
+        except Exception as e:
+            print("Adding Expenditure Unsuccessful")
+            print(f"An Error occured: {e}")
+        else:
+            print("Successfully added the expenditure")
+
 
     def change_base_income(self, month, amount):
         self.total_income = amount
@@ -227,9 +241,11 @@ class sdcExpenses:
             placeholders = ','.join('?' for _ in index_list)
 
             query = f'''
-                SELECT * FROM Expenses, Expenditures
+                SELECT *
+                FROM Expenses
+                LEFT JOIN Expenditures ON Expenses.expenditureID = Expenditures.expenditureID
+                LEFT JOIN Students ON Expenses.studentID = Students.studentID
                 WHERE expenseID IN ({placeholders})
-                AND Expenses.expenditureID = Expenditures.expenditureID
             '''
 
             # Execute the query with the list of IDs
