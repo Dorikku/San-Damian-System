@@ -172,9 +172,125 @@ def homepage():
                 homepage()
         return confirm_delete
 
+
+    def edit_refresh(dd):
+        expenditures = []
+        amounts = []
+
+        # get the date
+        date_text = date.entry.get()
+
+        if name_box.get() == "":
+            messagebox.showerror("Error", "Please select a student", parent=add_expenses_window)
+            return
+        elif name_box.get() not in [student["name"] for student in sdc_expenses.display_students()]:
+            sdc_expenses.add_student(name_box.get())
+            # print(name_box.get())
+        # print(f'Name: {name_box.get()}')
+        name = name_box.get()
+
+        for idx, combobox in enumerate(comboboxes):
+            if combobox.get() == "":
+                messagebox.showerror("Error", "Please select an expenditure", parent=add_expenses_window)
+                return
+            elif combobox.get() not in [entry["expenditure"] for entry in expenditures_data]:
+                sdc_expenses.add_expenditure(combobox.get())
+                
+           
+            expenditures.append(combobox.get())
+
+        for idx, entry in enumerate(amount_boxes):
+            if entry.get() == "":
+                messagebox.showerror("Error", "Please enter an amount", parent=add_expenses_window)
+                return
+            # print(f"Entry {idx} amount: {entry.get()}")
+            amounts.append(entry.get())
+
+        description = ""
+        if description_box.get("1.0", tk.END) != "\n":
+            description = description_box.get("1.0", tk.END)
+
+
+        for i in range(len(expenditures)):
+            sdc_expenses.edit_expenses(date_text, name, expenditures[i], amounts[i], description, dd[i]["expenseID"])
+            
+
+        # # Update table
+        homepage()
+        edit_window.destroy()
+        
+
+
     def on_edit(row_index):
         def edit_entry():
-            new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
+            global expenses_frame, comboboxes, amount_boxes, expenditures_data, description_box, name_box, date, edit_window
+            # new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
+            edit_window = tb.Toplevel(root)
+            center_window(root, edit_window, 440, 620)
+            edit_window.resizable(width=False, height=True)
+            edit_window.iconbitmap(resource_path('sds_icon.ico'))
+
+            details_data = sdc_expenses.get_info(sorted_data[row_index]["expenseIDs"])
+            # Convert date strings to datetime objects for sorting
+            for item in details_data:
+                item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
+
+
+            scrollbar = VerticalScrolledFrame(edit_window)
+            scrollbar.pack(fill=BOTH, expand=True)
+
+            new_expenses = tb.Frame(scrollbar.interior)
+            new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20), side=tk.LEFT)
+
+
+            tb.Label(new_expenses, text="Edit Expenses", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
+
+           
+            tb.Label(new_expenses, text="Date: ", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+            datevar = details_data[0]['date'].strftime("%m/%d/%Y")
+            date_obj = datetime.strptime(datevar, "%m/%d/%Y")
+            date = tb.DateEntry(new_expenses, bootstyle=SUCCESS, startdate=datetime(date_obj.year, date_obj.month, date_obj.day))
+            date.pack(fill=X, expand=True, pady=(0, 15))
+            date.entry.configure(font=('Poppins', 11), bootstyle=DARK)
+            
+
+            get_student = sdc_expenses.display_students()
+            student_names = [student["name"] for student in get_student]
+            tb.Label(new_expenses, text="Student:", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+            name_box = tb.Combobox(new_expenses, values=student_names, bootstyle=DARK, font=('Poppins', 11))
+            name_box.pack(fill=X, expand=True, pady=(0, 15))
+            name_box.bind("<MouseWheel>", do_nothing)
+            name_box.set(details_data[0]['name'])  
+
+            # List to store combobox references
+            comboboxes = []
+            amount_boxes = []
+            expenditures_data = sdc_expenses.get_expenditures()
+
+            tb.Label(new_expenses, text="Expenditure:                                   Amount:", bootstyle="DARK", font=('Poppins', 11)).pack(fill=X)
+            expenses_frame = tb.Frame(new_expenses)
+            expenses_frame.pack(fill=X, expand=True)
+            # List to store combobox references
+            for i, detail in enumerate(details_data):
+                add_expenditure()
+                comboboxes[i].set(detail['expenditure'])
+                amount_boxes[i].insert(0, detail['amount'])
+
+
+            # submit_button = tb.Button(new_expenses, text="➕Add Expenditure", bootstyle="outline-secondary", command=add_expenditure)
+            # submit_button.pack(pady=(2,15))
+
+            tb.Label(new_expenses, text="Description:", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+
+            description_box = tb.Text(new_expenses, height=2, font=('Poppins', 11))
+            description_box.pack(fill=X, expand=True, pady=(0, 30))
+            description_box.insert(tk.END, details_data[0]['description'])
+
+            submit_button = tb.Button(new_expenses, text="Submit", bootstyle=SUCCESS, command=lambda: edit_refresh(details_data))
+            submit_button.pack(fill=X)
+                
+            
+
         return edit_entry
 
     def on_hover(event):
@@ -253,9 +369,8 @@ def homepage():
                 messagebox.showerror("Error", "Please select an expenditure", parent=add_expenses_window)
                 return
             elif combobox.get() not in [entry["expenditure"] for entry in expenditures_data]:
-                # sdc_expenses.add_expenditure(combobox.get())
-                messagebox.showerror("Error", "Please select an expenditure", parent=add_expenses_window)
-                return
+                sdc_expenses.add_expenditure(combobox.get())
+                
            
             expenditures.append(combobox.get())
 
@@ -361,7 +476,7 @@ def homepage():
 
 
     def apply_filter_sort(month_var, sort_var, order_var):
-        global sorted_data
+        global sorted_data, filtered_income
         month = month_var.get()
         sort = sort_var.get()
         order = order_var.get()

@@ -187,7 +187,7 @@ class sdcExpenses:
     
 
     def get_expenditures(self):
-        rows = db.execute("SELECT expenditure FROM Expenditures").fetchall()
+        rows = db.execute("SELECT expenditure FROM Expenditures ORDER BY expenditure ASC").fetchall()
 
         # Convert rows to a list of dictionaries
         result = [dict(row) for row in rows]
@@ -261,3 +261,23 @@ class sdcExpenses:
         except Exception as e:
             print("An Error occured: ", e)
             return None
+    
+
+    def edit_expenses(self, date, student_name, expenditure, amount, description, expenseID):
+        try:
+            db.execute('''
+            UPDATE Expenses
+            SET date = ?,
+                studentID = (SELECT studentID FROM Students WHERE name = ?),
+                expenditureID = (SELECT expenditureID FROM Expenditures WHERE expenditure = ?),
+                amount = ?,
+                description = ?
+            WHERE expenseID = ?
+            ''', (date, student_name, expenditure, amount, description, expenseID))
+            conn.commit()
+
+        except Exception as e:
+            print("Edit Unsuccessful")
+            print(f"An Error occured: {e}")
+        else:
+            print("Successfully edited the expense")
