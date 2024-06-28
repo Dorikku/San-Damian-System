@@ -234,6 +234,22 @@ class sdcExpenses:
             # print("Successfully deleted the expense")
             pass
         
+    
+    def delete_income(self, id):
+        try:
+            db.execute('''
+            DELETE FROM Incomes
+            WHERE incomeID = ?
+            ''', (id,))
+            conn.commit()
+
+        except Exception as e:
+            print("Delete Unsuccessful")
+            print(f"An Error occured: {e}")
+        else:
+            # print("Successfully deleted the income")
+            pass
+
 
     def get_info(self, index):
         try:
@@ -297,3 +313,21 @@ class sdcExpenses:
             print(f"An Error occured: {e}")
         else:
             print("Successfully edited the student")
+
+
+    def edit_income(self, id, date, description, amount):
+        try:
+            db.execute('''
+            UPDATE Incomes
+            SET date = ?,
+                description = ?,
+                amount = ?
+            WHERE incomeID = ?
+            ''', (date, description, amount, id))
+            conn.commit()
+
+        except Exception as e:
+            print("Edit Unsuccessful")
+            print(f"An Error occured: {e}")
+        else:
+            print("Successfully edited the income")

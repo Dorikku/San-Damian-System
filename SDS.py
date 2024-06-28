@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 from tkinter import PhotoImage
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
+from ttkbootstrap.scrolled import ScrolledFrame
 from SDC_system import sdcExpenses
 from tkinter import messagebox, simpledialog
 from ttkbootstrap.dialogs import Querybox
@@ -16,56 +17,6 @@ from datetime import datetime
 
 
 sdc_expenses = sdcExpenses()
-
-class VerticalScrolledFrame(ttk.Frame):
-    """A pure Tkinter scrollable frame that actually works!
-    * Use the 'interior' attribute to place widgets inside the scrollable frame.
-    * Construct and pack/place/grid normally.
-    * This frame only allows vertical scrolling.
-    """
-    def __init__(self, parent, *args, **kw):
-        ttk.Frame.__init__(self, parent, *args, **kw)
-
-        # Create a canvas object and a vertical scrollbar for scrolling it.
-        vscrollbar = ttk.Scrollbar(self, orient=VERTICAL)
-        vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
-        canvas = tk.Canvas(self, bd=0, highlightthickness=0,
-                           yscrollcommand=vscrollbar.set)
-        canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
-        vscrollbar.config(command=canvas.yview)
-
-        # Reset the view
-        canvas.xview_moveto(0)
-        canvas.yview_moveto(0)
-
-        # Create a frame inside the canvas which will be scrolled with it.
-        self.interior = interior = ttk.Frame(canvas)
-        interior_id = canvas.create_window(0, 0, window=interior,
-                                           anchor=NW)
-    
-
-        # Make frame scrollable using mouse scroll wheel
-        # def _on_mousewheel(event):
-        #     canvas.yview_scroll(-1 * int(event.delta/120), "units")
-
-        # canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
-        # Track changes to the canvas and frame width and sync them,
-        # also updating the scrollbar.
-        def _configure_interior(event):
-            # Update the scrollbars to match the size of the inner frame.
-            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
-            canvas.config(scrollregion="0 0 %s %s" % size)
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # Update the canvas's width to fit the inner frame.
-                canvas.config(width=interior.winfo_reqwidth())
-        interior.bind('<Configure>', _configure_interior)
-
-        def _configure_canvas(event):
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # Update the inner frame's width to fill the canvas.
-                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
-        canvas.bind('<Configure>', _configure_canvas)
 
 
 def center_window(parent, window, width, height):
@@ -92,6 +43,10 @@ def validate_float(value_if_allowed):
         except ValueError:
             return False
 
+
+# Function to get the month name and year in the desired format
+def get_month_year_string(date):
+    return date.strftime("%B %Y")
 
 def homepage():
     global main_frame, hovered_row
@@ -120,11 +75,11 @@ def homepage():
 
 
             # tb.Label(view_window, text="Expenditure Details", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
-            scrollbar = VerticalScrolledFrame(view_window)
-            scrollbar.pack(fill=BOTH, expand=True)
+            sf = ScrolledFrame(view_window, autohide=True)
+            sf.pack(fill=BOTH, expand=True)
 
-            view_frame = tb.Frame(scrollbar.interior)
-            view_frame.pack(fill=X, expand=True, padx=30, pady=(0,20), side=tk.LEFT)
+            view_frame = tb.Frame(sf)
+            view_frame.pack(fill=X, expand=True, padx=30, pady=(0,20))
             tb.Label(view_frame, text="Expenditure Details", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).grid(row=0, column=1, columnspan=2)
 
 
@@ -236,11 +191,13 @@ def homepage():
                 item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
 
 
-            scrollbar = VerticalScrolledFrame(edit_window)
-            scrollbar.pack(fill=BOTH, expand=True)
+            # scrollbar = VerticalScrolledFrame(edit_window)
+            # scrollbar.pack(fill=BOTH, expand=True)
+            sf = ScrolledFrame(edit_window, autohide=True)
+            sf.pack(fill=BOTH, expand=True)
 
-            new_expenses = tb.Frame(scrollbar.interior)
-            new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20), side=tk.LEFT)
+            new_expenses = tb.Frame(sf)
+            new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20))
 
 
             tb.Label(new_expenses, text="Edit Expenses", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
@@ -403,13 +360,14 @@ def homepage():
         add_expenses_window.resizable(width=False, height=True)
         add_expenses_window.iconbitmap(resource_path('sds_icon.ico'))
 
-        # new_expenses = tb.Frame(add_expenses_window)
-        # new_expenses.pack(fill=X, expand=True, padx=30, pady=(0,20), side=tk.LEFT)
-        scrollbar = VerticalScrolledFrame(add_expenses_window)
-        scrollbar.pack(fill=BOTH, expand=True)
+    
+        # scrollbar = VerticalScrolledFrame(add_expenses_window)
+        # scrollbar.pack(fill=BOTH, expand=True)
+        sf = ScrolledFrame(add_expenses_window, autohide=True)
+        sf.pack(fill=BOTH, expand=True)
 
-        new_expenses = tb.Frame(scrollbar.interior)
-        new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20), side=tk.LEFT)
+        new_expenses = tb.Frame(sf)
+        new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20))
 
 
         tb.Label(new_expenses, text="Add Expenses", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
@@ -505,9 +463,7 @@ def homepage():
     def on_combobox_change(event, month_var, sort_var, order_var):
         apply_filter_sort(month_var, sort_var, order_var)
 
-    # Function to get the month name and year in the desired format
-    def get_month_year_string(date):
-        return date.strftime("%B %Y")
+    
     
 
     # Data
@@ -808,11 +764,16 @@ def incomings_page():
         return "break"
 
 
-    def refresh_table():
+    def refresh_table(dat):
         for row in table.get_children():
             table.delete(row)
-        for index, entry in enumerate(data):
-            table.insert("", "end", iid=index, values=(f'                  {entry["date"]}', entry["description"], f'          {entry["amount"]}'))
+        for index, entry in enumerate(dat):
+            table.insert("", "end", iid=index, values=(f'                  {entry["date"].strftime("%m/%d/%Y")}', entry["description"], f'          {entry["amount"]}'))
+        
+    
+    def update_total(dat):
+        total_amount_label.config(text=f'Total Amount: {sum(entry["amount"] for entry in dat)}')
+
 
 
     def on_hover(event):
@@ -857,13 +818,71 @@ def incomings_page():
     def on_delete(row_index):
         def confirm_delete():
             if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this entry?"):
-                refresh_table()
+                sdc_expenses.delete_income(inc_filtered_data[row_index]["incomeID"])
+                incomings_page()
         return confirm_delete
 
 
+    def edit_refresh(dat, date_box, description_box, amount_box):
+        date_text = date_box.entry.get()
+
+        description = ""
+        if description_box.get("1.0", tk.END).strip() == "":
+            messagebox.showerror("Error", "Please enter description", parent=edit_window)
+            return
+        description = description_box.get("1.0", tk.END).strip()
+
+
+        if amount_box.get() == "":
+            messagebox.showerror("Error", "Please enter an amount", parent=edit_window)
+            return
+        amount = amount_box.get()
+
+        sdc_expenses.edit_income(dat["incomeID"], date_text, description, amount)
+        incomings_page()
+        edit_window.destroy()  
+        # print(dat["incomeID"], date_text, description, amount)
+
     def on_edit(row_index):
         def edit_entry():
-            new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
+            global edit_window
+            # new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
+            edit_window = tb.Toplevel(root)
+            center_window(root, edit_window, 440, 500)
+            edit_window.resizable(width=False, height=True)
+            edit_window.iconbitmap(resource_path('sds_icon.ico'))
+
+            sf = ScrolledFrame(edit_window, autohide=True)
+            sf.pack(fill=BOTH, expand=True)
+
+            edit_frame = tb.Frame(sf)
+            edit_frame.pack(fill=X, expand=True, padx=60, pady=(0,20))
+
+            tb.Label(edit_frame, text="Edit Incomings", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
+
+            tb.Label(edit_frame, text="Date: ", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+            datevar = inc_filtered_data[row_index]['date'].strftime("%m/%d/%Y")
+            date_obj = datetime.strptime(datevar, "%m/%d/%Y")
+            date = tb.DateEntry(edit_frame, bootstyle=SUCCESS, startdate=datetime(date_obj.year, date_obj.month, date_obj.day))
+            date.pack(fill=X, expand=True, pady=(0, 15))
+            date.entry.configure(font=('Poppins', 11), bootstyle=DARK)
+
+            tb.Label(edit_frame, text="Description:", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+
+            description_box = tb.Text(edit_frame, height=2, font=('Poppins', 11))
+            description_box.pack(fill=X, expand=True, pady=(0, 15))
+            description_box.insert(tk.END, inc_filtered_data[row_index]['description'])
+
+            vcmd = (edit_frame.register(validate_float), '%P')
+
+            tb.Label(edit_frame, text="Amount:", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
+            amount_box = tb.Entry(edit_frame, bootstyle=DARK, font=('Poppins', 11), width=7, validate='key', validatecommand=vcmd)
+            amount_box.pack(fill=X, expand=True, pady=(0, 30))
+            amount_box.insert(0, inc_filtered_data[row_index]['amount'])
+
+            submit_button = tb.Button(edit_frame, text="Submit", bootstyle=SUCCESS, command=lambda: edit_refresh(inc_filtered_data[row_index], date, description_box, amount_box))
+            submit_button.pack(fill=X)
+            
         return edit_entry
 
 
@@ -874,7 +893,7 @@ def incomings_page():
 
         # get the description
         if description_box.get("1.0", tk.END) == "\n":
-            messagebox.showerror("Error", "Please enter an amount", parent=add_expenses_window)
+            messagebox.showerror("Error", "Please enter description", parent=add_expenses_window)
             return
         description = description_box.get("1.0", tk.END)
 
@@ -902,11 +921,14 @@ def incomings_page():
 
         # new_expenses = tb.Frame(add_expenses_window)
         # new_expenses.pack(fill=X, expand=True, padx=30, pady=(0,20), side=tk.LEFT)
-        scrollbar = VerticalScrolledFrame(add_expenses_window)
-        scrollbar.pack(fill=BOTH, expand=True)
+        # scrollbar = VerticalScrolledFrame(add_expenses_window)
+        # scrollbar.pack(fill=BOTH, expand=True)
+        sf = ScrolledFrame(add_expenses_window, autohide=True)
+        sf.pack(fill=BOTH, expand=True)
 
-        new_expenses = tb.Frame(scrollbar.interior)
-        new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20), side=tk.LEFT)
+
+        new_expenses = tb.Frame(sf)
+        new_expenses.pack(fill=X, expand=True, padx=60, pady=(0,20))
 
 
         tb.Label(new_expenses, text="Add Income", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
@@ -930,9 +952,26 @@ def incomings_page():
         submit_button.pack(fill=X)
 
 
+    def apply_filter(month_var):
+        global inc_filtered_data
+        month = month_var.get()
+        inc_filtered_data = data
+
+        if month != "All":
+            month_datetime = datetime.strptime(month, "%B %Y")
+            inc_filtered_data = [item for item in data if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
+
+        refresh_table(inc_filtered_data)
+        update_total(inc_filtered_data)
+
+
+
     # Data
     data = sdc_expenses.display_incoming_table()
-    
+    # Convert date strings to datetime objects for sorting
+    for item in data:
+        item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
+
     # Main Frame
     main_frame.pack_forget()
     main_frame = tb.Frame(root)
@@ -943,8 +982,12 @@ def incomings_page():
     header_frame.pack(fill=X, pady=10, padx=30)
 
     # Sort Month
-    months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    month_menu = tb.Combobox(header_frame, values=months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    # months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    unique_months = list(set([get_month_year_string(item["date"]) for item in data]))
+    unique_months.sort(key=lambda date: datetime.strptime(date, "%B %Y"))
+
+    month_var = tk.StringVar()
+    month_menu = tb.Combobox(header_frame, textvariable=month_var, values=["All"] + unique_months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     month_menu.pack(side=LEFT, padx=20)
     month_menu.current(0)
     
@@ -963,11 +1006,15 @@ def incomings_page():
     table.column("description", width=500)
     # table.column("amount", width=20)
 
+
+    month_menu.bind("<<ComboboxSelected>>", lambda e: apply_filter(month_var))
+
+
     # Binding mouse click events to do_nothing function
     table.bind("<Button-1>", do_nothing)  # Left click
     table.bind("<Button-3>", do_nothing)  # Right click
 
-    refresh_table()
+    
 
     # Bind the hover event
     table.bind("<Motion>", on_hover)
@@ -988,10 +1035,16 @@ def incomings_page():
     # New Entry Button
     new_button = tb.Button(highlight_frame, text="Add Income", image=add_icon, compound=tk.LEFT, command=add_new_entry, bootstyle="outline-secondary", style="secondary.Outline.TButton")
     new_button.pack(fill=X, pady=2)
-
-    total_amount = sum(entry["amount"] for entry in data)
-    total_amount_label = tb.Label(highlight_frame, text=f"Total Amount:  {total_amount}", bootstyle=DARK)
+    
+    
+    total_amount = tk.DoubleVar(value=sum(entry["amount"] for entry in data))
+    total_amount_label = tb.Label(highlight_frame, text=f"Total Amount:  {total_amount.get()}", bootstyle=DARK)
     total_amount_label.pack(side=LEFT, pady=30)
+
+    # refresh_table(data)
+    apply_filter(month_var) 
+
+    # update_total(inc_filtered_data)
 
 
 def search_page():
@@ -1016,25 +1069,44 @@ def search_page():
 
     def on_key_release(event):
         query = entry.get()
-        update_listbox(query)
+        update_listbox(query, month_var)
 
-    def update_listbox(query):
+
+    def update_listbox(query, month_v):
+        # global results
+        if query == "🔍Search Student...":
+            query = ""
         results, total = sdc_expenses.display_student_expenses(query)
+        for item in results:
+            item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
 
-        total_amount_label.config(text=f"Total Amount:  {total}")
+        filtered_results = results
+        month = month_v.get()
+        if month != "All":
+            month_datetime = datetime.strptime(month, "%B %Y")
+            filtered_results = [item for item in results if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
+
+
+        total_amount_label.config(text=f"Total Amount:  {sum(entry['amount'] for entry in filtered_results)}")
         for row in table.get_children():
             table.delete(row)
-        for index, entry in enumerate(results):
-            table.insert("", "end", iid=index, values=(entry["date"], entry["name"], entry["expenditure"], entry["amount"], entry["description"]))
+        for index, entry in enumerate(filtered_results):
+            table.insert("", "end", iid=index, values=(entry["date"].strftime("%m/%d/%Y"), entry["name"], entry["expenditure"], entry["amount"], entry["description"]))
+        
+
 
 
     def get_name(event):
         select = table.focus()
-        name = table.item(select, 'values')[1]
-        # print(name)
-        entry.delete(0, tk.END)
-        entry.insert(0, name)
-        update_listbox(name)
+        try:
+            name = table.item(select, 'values')[1]
+            # print(name)
+            entry.delete(0, tk.END)
+            entry.insert(0, name)
+            update_listbox(name, month_var)
+        except:
+            pass
+
 
 
     global entry
@@ -1053,10 +1125,18 @@ def search_page():
     search_frame.pack(fill=X, pady=10, padx=50)
 
     # Sort Month
-    months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    month_menu = tb.Combobox(header_frame, values=months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    data, _ = sdc_expenses.display_student_expenses("")
+    for item in data:
+        item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
+
+    unique_months = list(set([get_month_year_string(item["date"]) for item in data]))
+    unique_months.sort(key=lambda date: datetime.strptime(date, "%B %Y"))
+
+    month_var = tk.StringVar()
+    month_menu = tb.Combobox(header_frame, textvariable=month_var, values=["All"] + unique_months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     month_menu.pack(side=LEFT)
-    month_menu.current(0)  
+    month_menu.current(0) 
+
 
     entry = tb.Entry(search_frame, bootstyle="success")
     entry.pack(fill=X)
@@ -1109,7 +1189,9 @@ def search_page():
     total_amount_label = tb.Label(highlight_frame, text=f"Total Amount: ", bootstyle=DARK, font=('Poppins', 12, 'bold'))
     total_amount_label.pack(side=LEFT, pady=30)
 
-    update_listbox("")
+    month_menu.bind("<<ComboboxSelected>>", on_key_release)
+    update_listbox("", month_var)
+
 
 
 
