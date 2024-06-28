@@ -636,10 +636,10 @@ def students_page():
         return "break"
     
 
-    def refresh_table():
+    def refresh_table(dat):
         for row in table.get_children():
             table.delete(row)
-        for index, entry in enumerate(data):
+        for index, entry in enumerate(dat):
             table.insert("", "end", iid=index, values=(entry["studentID"], entry["name"]))
 
 
@@ -676,19 +676,52 @@ def students_page():
     # Functions
     def on_delete(row_index):
         def confirm_delete():
-            if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this entry?"):
-                refresh_table()
+            if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this entry?", parent=main_frame):
+                # refresh_table()
+                sdc_expenses.delete_student(studs_sorted_data[row_index]["studentID"])
+                # print(data[row_index]["studentID"])
+                students_page()
         return confirm_delete
 
 
     def on_edit(row_index):
         def edit_entry():
-            new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
+            # new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
+            edit_name = simpledialog.askstring("Edit Student", "Enter Name: ",parent=main_frame, initialvalue=studs_sorted_data[row_index]["name"])
+            if edit_name != "" and edit_name is not None:
+                sdc_expenses.edit_student(studs_sorted_data[row_index]["studentID"], edit_name)
+                print(edit_name)
+                students_page()
+            
         return edit_entry
 
 
     def add_new_entry():
-        new_date = simpledialog.askstring("New Entry", "Enter Date:")
+        new_student = simpledialog.askstring("New Student", "Enter Name: ")
+        # print(new_student)
+
+        if new_student != "" and new_student is not None:
+
+            if new_student.lower() in [student["name"].lower() for student in data]:
+                messagebox.showerror("Error", "Student already exists", parent=main_frame)
+                return
+        
+            sdc_expenses.add_student(new_student)
+            students_page()
+        
+
+
+    def apply_filter_sort(sort_var, order_var):
+        global studs_sorted_data
+        sort = sort_var.get()
+        order = order_var.get()
+
+        if sort == "Id":
+            studs_sorted_data = sorted(data, key=lambda x: x["studentID"], reverse=(order == "Descending"))
+        else:
+            studs_sorted_data = sorted(data, key=lambda x: x["name"], reverse=(order == "Descending"))
+
+        refresh_table(studs_sorted_data)
 
 
     # Data
@@ -703,12 +736,14 @@ def students_page():
     header_frame = tb.Frame(main_frame)
     header_frame.pack(fill=X, pady=10, padx=30)
 
-    # Sort By Name, Date, Amount
-    sort_menu = tb.Combobox(header_frame, values=["Id", "Name"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    # Sort By Id, Name
+    sort_var = tk.StringVar()
+    sort_menu = tb.Combobox(header_frame, textvariable=sort_var, values=["Id", "Name"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     sort_menu.pack(side=LEFT, padx=20)
     sort_menu.current(0)
 
-    asc_desc_menu = tb.Combobox(header_frame, values=["Ascending", "Descending"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    order_var = tk.StringVar()
+    asc_desc_menu = tb.Combobox(header_frame, textvariable=order_var, values=["Ascending", "Descending"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     asc_desc_menu.pack(side=LEFT, padx=20)
     asc_desc_menu.current(1)
 
@@ -725,11 +760,16 @@ def students_page():
     table.tag_configure('hovered', background='#d9d9d9')
     table.tag_configure('normal', background='white')
 
+
+    sort_menu.bind("<<ComboboxSelected>>", lambda e: apply_filter_sort(sort_var, order_var))
+    asc_desc_menu.bind("<<ComboboxSelected>>", lambda e: apply_filter_sort(sort_var, order_var))
+
     # Binding mouse click events to do_nothing function
     table.bind("<Button-1>", do_nothing)  # Left click
     table.bind("<Button-3>", do_nothing)  # Right click
 
-    refresh_table()
+    refresh_table(data)
+    apply_filter_sort(sort_var, order_var)   # Handles the initial sorting and filtering
 
     # Bind the hover event
     table.bind("<Motion>", on_hover)

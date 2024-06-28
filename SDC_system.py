@@ -196,7 +196,7 @@ class sdcExpenses:
 
     def delete_student(self, name):
         try:
-            db.execute("DELETE FROM Students WHERE name = ?", name)
+            db.execute("DELETE FROM Students WHERE studentID = ?", (name,))
             # Commit changes
             conn.commit()
         except Exception as e:
@@ -281,3 +281,19 @@ class sdcExpenses:
             print(f"An Error occured: {e}")
         else:
             print("Successfully edited the expense")
+
+
+    def edit_student(self, studentID, name):
+        try:
+            db.execute('''
+            UPDATE Students
+            SET name = ?
+            WHERE studentID = ?
+            ''', (name, studentID))
+            conn.commit()
+
+        except Exception as e:
+            print("Edit Unsuccessful")
+            print(f"An Error occured: {e}")
+        else:
+            print("Successfully edited the student")
