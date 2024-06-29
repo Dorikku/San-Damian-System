@@ -1200,45 +1200,242 @@ def export_page():
     global main_frame
 
     def export_report():
-        data = sdc_expenses.display_outgoings_table()
-        df = pd.DataFrame(data)
-        # df.to_excel("report.xlsx", index=False)
+        # data = sdc_expenses.display_outgoings_table()
+        for entry in sorted_data:
+            entry['date'] = entry['date'].strftime("%m/%d/%Y")
+
+        df = pd.DataFrame(sorted_data)
+        df = df[["date", "name", "expenditure", "description", "amount"]]
+        df.columns = df.columns.str.upper()
+
 
         writer = pd.ExcelWriter('report.xlsx', engine='xlsxwriter')
-        df.to_excel(writer, index=False, sheet_name='report')
+        df.to_excel(writer, index=False, sheet_name='report', startrow=4, startcol=1)
         workbook = writer.book
         worksheet = writer.sheets['report']
 
         # Add formats for styling
-        header_format = workbook.add_format({'bold': True, 'align': 'center', 'bg_color': '#F7F7F7', 'border': 1})
-        data_format = workbook.add_format({'align': 'center', 'border': 1})
+        header_format = workbook.add_format({'font_name': 'Century Gothic', 'font_size': 10, 'bold': True, 'align': 'center','valign': 'vcenter', 'bg_color': '#B8D3EF', 'border': 1, 'border_color': '#ADADAD'})
+        data_format = workbook.add_format({'font_name': 'Century Gothic', 'font_size': 10,'align': 'center','valign': 'vcenter', 'border': 1, 'border_color': '#ADADAD'})
+        data_left_align = workbook.add_format({'font_name': 'Century Gothic', 'font_size': 10, 'align': 'left','valign': 'vcenter', 'border': 1, 'border_color': '#ADADAD'})
+        # Create a format with the desired font properties
+        title_format = workbook.add_format({'font_name': 'Century Gothic', 'font_size': 22, 'bold': True,'valign': 'vcenter', 'font_color': '#595959', 'border_color': '#ADADAD'})
+        currency_format = workbook.add_format({'font_name': 'Century Gothic', 'font_size': 10,'num_format': '#,##0.00','valign': 'vcenter', 'border': 1, 'border_color': '#ADADAD'})
+        total_format = workbook.add_format({'font_name': 'Century Gothic', 'font_size': 13, 'bold': True, 'num_format': '₱     #,##0.00','valign': 'vcenter'})
+        total_text_format = workbook.add_format({'font_name': 'Century Gothic', 'font_size': 9, 'valign': 'vcenter', 'align': 'right'})
+
+        # write title
+        worksheet.write('B3', month_var.get() + ' EXPENSES', title_format)
+        worksheet.write('D4', 'TOTAL: ', total_text_format)
+
+
 
         # Apply formats to headers and data
         for col_num, value in enumerate(df.columns.values):
-            worksheet.write(0, col_num, value, header_format)
+            worksheet.write(4, col_num + 1, value, header_format)
 
         for row_num in range(len(df)):
             for col_num, value in enumerate(df.iloc[row_num]):
-                worksheet.write(row_num + 1, col_num, value, data_format)
+                if df.columns[col_num] in ["DESCRIPTION", "NAME", "EXPENDITURE"]:
+                    worksheet.write(row_num + 5, col_num + 1, value, data_left_align)
+                elif df.columns[col_num] == "AMOUNT":
+                    worksheet.write(row_num + 5, col_num + 1, value, currency_format)
+                else:
+                    worksheet.write(row_num + 5, col_num + 1, value, data_format)
+            worksheet.set_row(row_num + 5, 22)
 
         # Auto-adjust column width
         for i, col in enumerate(df.columns):
             column_len = max(df[col].astype(str).str.len().max(), len(col))
-            worksheet.set_column(i, i, column_len + 2)
+            worksheet.set_column(i + 1, i + 1, column_len + 5)
+        
 
-        # Close the Pandas Excel writer and output the Excel file
+        # Set the height of the header row
+        worksheet.set_row(4, 35)  # Adjust the height as needed
+
+        # Merge E4 and F4 and set the value to the sum of the "AMOUNT" column
+        total_amount = df['AMOUNT'].sum()
+        worksheet.merge_range('E4:F4', total_amount, total_format)
+
         writer.close()
         messagebox.showinfo("Export Report", "Report exported successfully")
 
 
+    def refresh_table(table_data):
+        for row in table.get_children():
+            table.delete(row)
+        for index, entry in enumerate(table_data):
+            table.insert("", "end", iid=index, values=(f'                   {entry["date"].strftime("%m/%d/%Y")}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
+        
+
+
+    # No-op function
+    def do_nothing(event):
+        return "break"
+
+
+
+
+
+
+    def update_highlights(dat, fil_incom):
+        total_expenditures = sum(entry["amount"] for entry in dat)
+
+        base_in = sum(entry["amount"] for entry in fil_incom)
+
+        base_income.set(base_in)
+
+        # remaining_balance = base_income.get() - total_expenditures
+        remaining_balance = base_in - total_expenditures
+        base_income_label.config(text=f"Base Balance:    {base_income.get()}")
+        remaining_balance_label.config(text=f"Remaining Balance:    {remaining_balance}")
+        total_expenditures_label.config(text=f"Total Expenditures:     {total_expenditures}")
+
+
+    def apply_filter_sort(month_var, sort_var, order_var):
+        global sorted_data, filtered_income
+        month = month_var.get()
+        sort = sort_var.get()
+        order = order_var.get()
+
+        filtered_data = data
+        filtered_income = incomings
+
+        # filtered_data = sdc_expenses.display_outgoings_table()
+        if month != "All":
+            month_datetime = datetime.strptime(month, "%B %Y")
+            filtered_data = [item for item in data if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
+            filtered_income = [item for item in incomings if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
+
+        if sort == "Name":
+            sorted_data = sorted(filtered_data, key=lambda x: x["name"], reverse=(order == "Descending"))
+        elif sort == "Amount":
+            sorted_data = sorted(filtered_data, key=lambda x: x["amount"], reverse=(order == "Descending"))
+        else:
+            sorted_data = sorted(filtered_data, key=lambda x: x["date"], reverse=(order == "Descending"))
+
+        # load_data(treeview, sorted_data)
+        refresh_table(sorted_data)
+        update_highlights(sorted_data, filtered_income)
+        # data = sorted_data
+
+    def on_combobox_change(event, month_var, sort_var, order_var):
+        apply_filter_sort(month_var, sort_var, order_var)
+
+
+
+    # Main Frame
+    # main_frame.pack_forget()
+    # main_frame = tb.Frame(root)
+    # main_frame.pack(side=LEFT, fill=BOTH, expand=True)
+
+    # export_button = tb.Button(main_frame, text="Export Report", bootstyle="success", command=export_report)
+    # export_button.pack(pady=60)
+    data = sdc_expenses.display_outgoings_table()
+    # sorted_data = data
+
+    # Convert date strings to datetime objects for sorting
+    for item in data:
+        item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
 
     # Main Frame
     main_frame.pack_forget()
     main_frame = tb.Frame(root)
     main_frame.pack(side=LEFT, fill=BOTH, expand=True)
 
-    export_button = tb.Button(main_frame, text="Export Report", bootstyle="success", command=export_report)
-    export_button.pack(pady=60)
+    # Header Buttons
+    header_frame = tb.Frame(main_frame)
+    header_frame.pack(fill=X, pady=10, padx=30)
+
+
+    # Extract unique months and years from the data
+    unique_months = list(set([get_month_year_string(item["date"]) for item in data]))
+    unique_months.sort(key=lambda date: datetime.strptime(date, "%B %Y"))
+    # Sort Month
+    month_var = tk.StringVar()
+    month_menu = tb.Combobox(header_frame, textvariable=month_var, values=["All"] + unique_months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    month_menu.pack(side=LEFT, padx=20)
+    month_menu.current(0)   
+
+    # Sort By Name, Date, Amount
+    sort_var = tk.StringVar()
+    sort_menu = tb.Combobox(header_frame, textvariable=sort_var, values=["Date", "Name", "Amount"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    sort_menu.pack(side=LEFT, padx=20)
+    sort_menu.current(0)
+
+    order_var = tk.StringVar()  
+    asc_desc_menu = tb.Combobox(header_frame, textvariable=order_var, values=["Ascending", "Descending"], state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
+    asc_desc_menu.pack(side=LEFT, padx=20)
+    asc_desc_menu.current(1)
+
+    # Table
+    table_frame = tb.Frame(main_frame)
+    table_frame.pack(fill=BOTH, expand=True, padx=50, pady=1)
+    columns = ("Date", "Name", "Amount", "Expenditures", "Description")
+    table = tb.Treeview(table_frame, columns=columns, show="headings")
+    table.heading("Date", text="Date")
+    table.heading("Name", text="Name")
+    table.heading("Amount", text="Amount")
+    table.heading("Expenditures", text="Expenditures")
+    table.heading("Description", text="Description")
+    table.column("Amount", anchor="center")
+
+
+    month_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, month_var, sort_var, order_var))
+    sort_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, month_var, sort_var, order_var))
+    asc_desc_menu.bind("<<ComboboxSelected>>", lambda e: on_combobox_change(e, month_var, sort_var, order_var))
+
+    refresh_table(data)
+    
+    # sorted_data = data
+
+
+    table.pack(side=tk.LEFT, fill=BOTH, expand=True)
+
+
+    # Binding mouse click events to do_nothing function
+    table.bind("<Button-1>", do_nothing)  # Left click
+    table.bind("<Button-3>", do_nothing)  # Right click
+
+
+    # Create a vertical scrollbar
+    vsb = tb.Scrollbar(table_frame, orient="vertical", command=table.yview)
+    vsb.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Configure the Treeview to use the vertical scrollbar
+    table.configure(yscrollcommand=vsb.set)
+
+    
+
+    # Highlights
+    highlight_frame = tb.Frame(main_frame)
+    highlight_frame.pack(fill=X, padx=50)
+
+    # New Entry Button
+    new_button = tb.Button(highlight_frame, text="Export Report", image=add_icon, compound=tk.LEFT, command=export_report, bootstyle="outline-secondary", style="secondary.Outline.TButton")
+    new_button.pack(fill=X, pady=2)
+
+
+    # base_income = tk.DoubleVar(value=50000)
+    incomings = sdc_expenses.display_incoming_table()
+    for item in incomings:
+        item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
+
+    base_income = tk.DoubleVar(value=sum(entry["amount"] for entry in incomings))
+    base_income_label = tb.Label(highlight_frame, text=f"Base Balance: {base_income.get()}", bootstyle=DARK)
+    base_income_label.pack(side=LEFT, pady=30)
+
+
+    remaining_balance_label = tb.Label(highlight_frame, text="Remaining Balance: ", bootstyle=DARK)
+    remaining_balance_label.pack(side=LEFT, padx=60)
+
+    total_expenditures_label = tb.Label(highlight_frame, text="Total Expenditures: ", bootstyle=DARK)
+    total_expenditures_label.pack(side=LEFT)
+
+
+
+    update_highlights(data, incomings)
+    apply_filter_sort(month_var, sort_var, order_var)   # Handles the initial sorting and filtering
 
 
 def resource_path(relative_path):
