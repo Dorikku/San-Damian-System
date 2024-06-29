@@ -1,5 +1,4 @@
 import tkinter as tk
-import tkinter.ttk as ttk
 from tkinter import PhotoImage
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
@@ -10,7 +9,6 @@ from ttkbootstrap.dialogs import Querybox
 import os
 import sys
 import pandas as pd
-import numpy as np
 from xlsxwriter.utility import xl_rowcol_to_cell
 from datetime import datetime
 
@@ -50,7 +48,6 @@ def get_month_year_string(date):
 
 def homepage():
     global main_frame, hovered_row
-    # , table, total_expenditures_label, base_income_label, remaining_balance_label, base_income, data
 
     def refresh_table(table_data):
         for row in table.get_children():
@@ -74,7 +71,6 @@ def homepage():
                 item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
 
 
-            # tb.Label(view_window, text="Expenditure Details", bootstyle=SUCCESS, font=('Poppins', 25, 'bold')).pack(pady=(30,20))
             sf = ScrolledFrame(view_window, autohide=True)
             sf.pack(fill=BOTH, expand=True)
 
@@ -119,11 +115,8 @@ def homepage():
         def confirm_delete():
             if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this entry?"):
 
-                # print(data[row_index]["expenseIDs"])
-                # sdc_expenses.delete_expense(data[row_index]["date"], data[row_index]["name"])
                 sdc_expenses.delete_expense(data[row_index]["expenseIDs"])
                 
-                # refresh_table()
                 homepage()
         return confirm_delete
 
@@ -140,8 +133,6 @@ def homepage():
             return
         elif name_box.get() not in [student["name"] for student in sdc_expenses.display_students()]:
             sdc_expenses.add_student(name_box.get())
-            # print(name_box.get())
-        # print(f'Name: {name_box.get()}')
         name = name_box.get()
 
         for idx, combobox in enumerate(comboboxes):
@@ -158,7 +149,6 @@ def homepage():
             if entry.get() == "":
                 messagebox.showerror("Error", "Please enter an amount", parent=add_expenses_window)
                 return
-            # print(f"Entry {idx} amount: {entry.get()}")
             amounts.append(entry.get())
 
         description = ""
@@ -179,7 +169,6 @@ def homepage():
     def on_edit(row_index):
         def edit_entry():
             global expenses_frame, comboboxes, amount_boxes, expenditures_data, description_box, name_box, date, edit_window
-            # new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
             edit_window = tb.Toplevel(root)
             center_window(root, edit_window, 440, 620)
             edit_window.resizable(width=False, height=True)
@@ -191,8 +180,6 @@ def homepage():
                 item["date"] = datetime.strptime(item["date"], "%m/%d/%Y")
 
 
-            # scrollbar = VerticalScrolledFrame(edit_window)
-            # scrollbar.pack(fill=BOTH, expand=True)
             sf = ScrolledFrame(edit_window, autohide=True)
             sf.pack(fill=BOTH, expand=True)
 
@@ -234,8 +221,6 @@ def homepage():
                 amount_boxes[i].insert(0, detail['amount'])
 
 
-            # submit_button = tb.Button(new_expenses, text="➕Add Expenditure", bootstyle="outline-secondary", command=add_expenditure)
-            # submit_button.pack(pady=(2,15))
 
             tb.Label(new_expenses, text="Description:", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
 
@@ -317,8 +302,6 @@ def homepage():
             return
         elif name_box.get() not in [student["name"] for student in sdc_expenses.display_students()]:
             sdc_expenses.add_student(name_box.get())
-            # print(name_box.get())
-        # print(f'Name: {name_box.get()}')
         name = name_box.get()
 
         for idx, combobox in enumerate(comboboxes):
@@ -335,7 +318,6 @@ def homepage():
             if entry.get() == "":
                 messagebox.showerror("Error", "Please enter an amount", parent=add_expenses_window)
                 return
-            # print(f"Entry {idx} amount: {entry.get()}")
             amounts.append(entry.get())
 
         description = ""
@@ -361,8 +343,6 @@ def homepage():
         add_expenses_window.iconbitmap(resource_path('sds_icon.ico'))
 
     
-        # scrollbar = VerticalScrolledFrame(add_expenses_window)
-        # scrollbar.pack(fill=BOTH, expand=True)
         sf = ScrolledFrame(add_expenses_window, autohide=True)
         sf.pack(fill=BOTH, expand=True)
 
@@ -413,12 +393,6 @@ def homepage():
 
 
 
-    # def update_base_income():
-    #     new_income = simpledialog.askfloat("Base Balance", "Enter new base income:")
-    #     if new_income is not None:
-    #         base_income.set(new_income)
-    #         update_highlights(data)
-
     def update_highlights(dat, fil_incom):
         total_expenditures = sum(entry["amount"] for entry in dat)
 
@@ -426,7 +400,6 @@ def homepage():
 
         base_income.set(base_in)
 
-        # remaining_balance = base_income.get() - total_expenditures
         remaining_balance = base_in - total_expenditures
         base_income_label.config(text=f"Base Balance:    {base_income.get()}")
         remaining_balance_label.config(text=f"Remaining Balance:    {remaining_balance}")
@@ -442,7 +415,6 @@ def homepage():
         filtered_data = data
         filtered_income = incomings
 
-        # filtered_data = sdc_expenses.display_outgoings_table()
         if month != "All":
             month_datetime = datetime.strptime(month, "%B %Y")
             filtered_data = [item for item in data if item["date"].year == month_datetime.year and item["date"].month == month_datetime.month]
@@ -488,7 +460,6 @@ def homepage():
     unique_months = list(set([get_month_year_string(item["date"]) for item in data]))
     unique_months.sort(key=lambda date: datetime.strptime(date, "%B %Y"))
     # Sort Month
-    # months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     month_var = tk.StringVar()
     month_menu = tb.Combobox(header_frame, textvariable=month_var, values=["All"] + unique_months, state="readonly", bootstyle=SUCCESS, font=('Poppins', 10))
     month_menu.pack(side=LEFT, padx=20)
@@ -567,9 +538,6 @@ def homepage():
     base_income = tk.DoubleVar(value=sum(entry["amount"] for entry in incomings))
     base_income_label = tb.Label(highlight_frame, text=f"Base Balance: {base_income.get()}", bootstyle=DARK)
     base_income_label.pack(side=LEFT, pady=30)
-    # base_income_label.bind("<Enter>", lambda e: base_income_label.config(bootstyle=DANGER))
-    # base_income_label.bind("<Leave>", lambda e: base_income_label.config(bootstyle=DARK))
-    # base_income_label.bind("<Button-1>", lambda e: update_base_income())
 
     remaining_balance_label = tb.Label(highlight_frame, text="Remaining Balance: ", bootstyle=DARK)
     remaining_balance_label.pack(side=LEFT, padx=60)
@@ -751,9 +719,6 @@ def students_page():
     total_students_label = tb.Label(highlight_frame, text=f"Total Students:    {len(data)}", bootstyle=DARK)
     total_students_label.pack(side=LEFT, pady=30)
 
-    # Highlights
-    # footer = tb.Frame(main_frame)
-    # footer.pack(fill=X, padx=50, pady=20)
 
 
 def incomings_page():
@@ -846,7 +811,6 @@ def incomings_page():
     def on_edit(row_index):
         def edit_entry():
             global edit_window
-            # new_date = messagebox.showinfo("Edit Entry", "The system doesn't support editing entries yet")
             edit_window = tb.Toplevel(root)
             center_window(root, edit_window, 440, 500)
             edit_window.resizable(width=False, height=True)
@@ -913,16 +877,10 @@ def incomings_page():
 
     def add_new_entry():
         global add_expenses_window
-        # new_date = simpledialog.askstring("New Entry", "Enter Date:")
         add_expenses_window = tb.Toplevel(root)
         center_window(root, add_expenses_window, 400, 500)
         add_expenses_window.resizable(width=False, height=True)
         add_expenses_window.iconbitmap(resource_path('sds_icon.ico'))
-
-        # new_expenses = tb.Frame(add_expenses_window)
-        # new_expenses.pack(fill=X, expand=True, padx=30, pady=(0,20), side=tk.LEFT)
-        # scrollbar = VerticalScrolledFrame(add_expenses_window)
-        # scrollbar.pack(fill=BOTH, expand=True)
         sf = ScrolledFrame(add_expenses_window, autohide=True)
         sf.pack(fill=BOTH, expand=True)
 
@@ -982,7 +940,6 @@ def incomings_page():
     header_frame.pack(fill=X, pady=10, padx=30)
 
     # Sort Month
-    # months = ['January', ' February',' March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     unique_months = list(set([get_month_year_string(item["date"]) for item in data]))
     unique_months.sort(key=lambda date: datetime.strptime(date, "%B %Y"))
 
@@ -1324,15 +1281,7 @@ def export_page():
 
 
 
-    # Main Frame
-    # main_frame.pack_forget()
-    # main_frame = tb.Frame(root)
-    # main_frame.pack(side=LEFT, fill=BOTH, expand=True)
-
-    # export_button = tb.Button(main_frame, text="Export Report", bootstyle="success", command=export_report)
-    # export_button.pack(pady=60)
     data = sdc_expenses.display_outgoings_table()
-    # sorted_data = data
 
     # Convert date strings to datetime objects for sorting
     for item in data:
