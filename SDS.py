@@ -53,7 +53,7 @@ def homepage():
         for row in table.get_children():
             table.delete(row)
         for index, entry in enumerate(table_data):
-            table.insert("", "end", iid=index, values=(f'                   {entry["date"].strftime("%m/%d/%Y")}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
+            table.insert("", "end", iid=index, values=(f'                   {entry["date"].strftime("%d/%m/%Y")}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
          
 
 
@@ -63,7 +63,7 @@ def homepage():
             view_window = tb.Toplevel(root)
             center_window(root, view_window, 440, 400)
             # view_window.resizable(width=False, height=True)
-            view_window.iconbitmap(resource_path('sds_icon.ico'))
+            view_window.iconbitmap(resource_path('san_damian_logo.ico'))
 
             details_data = sdc_expenses.get_info(sorted_data[index]["expenseIDs"])
             # Convert date strings to datetime objects for sorting
@@ -87,7 +87,7 @@ def homepage():
             tb.Label(view_frame, text="Expenditure", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=1, sticky="w")
             tb.Label(view_frame, text="Amount", bootstyle=SECONDARY, font=('Poppins', 11)).grid(row=3, column=2, sticky="e")
 
-            tb.Label(view_frame, text=details_data[0]['date'].strftime("%m/%d/%Y"), bootstyle=DARK, font=('Poppins', 11)).grid(row=1, column=2, sticky="e")
+            tb.Label(view_frame, text=details_data[0]['date'].strftime("%d/%m/%Y"), bootstyle=DARK, font=('Poppins', 11)).grid(row=1, column=2, sticky="e")
             tb.Label(view_frame, text=details_data[0]['name'], bootstyle=DARK, font=('Poppins', 11)).grid(row=2, column=2, sticky="e")
 
             i = 0
@@ -172,7 +172,7 @@ def homepage():
             edit_window = tb.Toplevel(root)
             center_window(root, edit_window, 440, 620)
             edit_window.resizable(width=False, height=True)
-            edit_window.iconbitmap(resource_path('sds_icon.ico'))
+            edit_window.iconbitmap(resource_path('san_damian_logo.ico'))
 
             details_data = sdc_expenses.get_info(sorted_data[row_index]["expenseIDs"])
             # Convert date strings to datetime objects for sorting
@@ -191,8 +191,8 @@ def homepage():
 
            
             tb.Label(new_expenses, text="Date: ", bootstyle=DARK, font=('Poppins', 11)).pack(fill=X)
-            datevar = details_data[0]['date'].strftime("%m/%d/%Y")
-            date_obj = datetime.strptime(datevar, "%m/%d/%Y")
+            datevar = details_data[0]['date'].strftime("%d/%m/%Y")
+            date_obj = datetime.strptime(datevar, "%d/%m/%Y")
             date = tb.DateEntry(new_expenses, bootstyle=SUCCESS, startdate=datetime(date_obj.year, date_obj.month, date_obj.day))
             date.pack(fill=X, expand=True, pady=(0, 15))
             date.entry.configure(font=('Poppins', 11), bootstyle=DARK)
@@ -340,7 +340,7 @@ def homepage():
         add_expenses_window = tb.Toplevel(root)
         center_window(root, add_expenses_window, 400, 620)
         add_expenses_window.resizable(width=False, height=True)
-        add_expenses_window.iconbitmap(resource_path('sds_icon.ico'))
+        add_expenses_window.iconbitmap(resource_path('san_damian_logo.ico'))
 
     
         sf = ScrolledFrame(add_expenses_window, autohide=True)
@@ -733,7 +733,7 @@ def incomings_page():
         for row in table.get_children():
             table.delete(row)
         for index, entry in enumerate(dat):
-            table.insert("", "end", iid=index, values=(f'                  {entry["date"].strftime("%m/%d/%Y")}', entry["description"], f'          {entry["amount"]}'))
+            table.insert("", "end", iid=index, values=(f'                  {entry["date"].strftime("%d/%m/%Y")}', entry["description"], f'          {entry["amount"]}'))
         
     
     def update_total(dat):
@@ -814,7 +814,7 @@ def incomings_page():
             edit_window = tb.Toplevel(root)
             center_window(root, edit_window, 440, 500)
             edit_window.resizable(width=False, height=True)
-            edit_window.iconbitmap(resource_path('sds_icon.ico'))
+            edit_window.iconbitmap(resource_path('san_damian_logo.ico'))
 
             sf = ScrolledFrame(edit_window, autohide=True)
             sf.pack(fill=BOTH, expand=True)
@@ -880,7 +880,7 @@ def incomings_page():
         add_expenses_window = tb.Toplevel(root)
         center_window(root, add_expenses_window, 400, 500)
         add_expenses_window.resizable(width=False, height=True)
-        add_expenses_window.iconbitmap(resource_path('sds_icon.ico'))
+        add_expenses_window.iconbitmap(resource_path('san_damian_logo.ico'))
         sf = ScrolledFrame(add_expenses_window, autohide=True)
         sf.pack(fill=BOTH, expand=True)
 
@@ -1048,7 +1048,7 @@ def search_page():
         for row in table.get_children():
             table.delete(row)
         for index, entry in enumerate(filtered_results):
-            table.insert("", "end", iid=index, values=(entry["date"].strftime("%m/%d/%Y"), entry["name"], entry["expenditure"], entry["amount"], entry["description"]))
+            table.insert("", "end", iid=index, values=(entry["date"].strftime("%d/%m/%Y"), entry["name"], entry["expenditure"], entry["amount"], entry["description"]))
         
 
 
@@ -1159,7 +1159,7 @@ def export_page():
     def export_report():
         # data = sdc_expenses.display_outgoings_table()
         for entry in sorted_data:
-            entry['date'] = entry['date'].strftime("%m/%d/%Y")
+            entry['date'] = entry['date'].strftime("%d/%m/%Y")
 
         df = pd.DataFrame(sorted_data)
         df = df[["date", "name", "expenditure", "description", "amount"]]
@@ -1222,7 +1222,7 @@ def export_page():
         for row in table.get_children():
             table.delete(row)
         for index, entry in enumerate(table_data):
-            table.insert("", "end", iid=index, values=(f'                   {entry["date"].strftime("%m/%d/%Y")}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
+            table.insert("", "end", iid=index, values=(f'                   {entry["date"].strftime("%d/%m/%Y")}', entry["name"], entry["amount"], entry["expenditure"], entry["description"]))
         
 
 
@@ -1474,8 +1474,8 @@ def install_font(src_path):
 # Create the main application window
 root = tb.Window(themename="yeti")
 root.geometry("1360x768")
-root.title("San Damian System")
-root.iconbitmap(resource_path("sds_icon.ico"))
+root.title("San Damian Training Center")
+root.iconbitmap(resource_path("san_damian_logo.ico"))
 
 
 try:
@@ -1492,12 +1492,14 @@ style = tb.Style()
 style.configure('danger.TLabel', font=('Poppins', 12))
 style.configure('dark.TLabel', font=('Poppins', 12))
 style.configure('TButton', font=('Poppins', 11))
-style.configure('but.success.TButton', font=('Poppins', 12))
+style.configure('but.success.TButton', font=('Poppins', 12), anchor='w')
 style.configure('secondary.Link.TButton', font=('Poppins', 10))
 style.configure('Treeview.Heading', font=('Poppins', 12, 'bold'))
 style.configure('Treeview', font=('Poppins', 12))
 style.configure('Treeview', rowheight=30)
 style.configure('secondary.Outline.TButton', font=('Poppins', 11))
+style.configure('inverse-success.TLabel', font=('Poppins', 10))
+
 # style.configure('success.TEntry', font=('Poppins', 6))
 
 
@@ -1525,14 +1527,20 @@ calendar_icon = PhotoImage(file=resource_path('icons/calendar-regular-24.png'))
 name_icon = PhotoImage(file=resource_path('icons/user-circle-regular-24.png'))
 details_icon = PhotoImage(file=resource_path('icons\menu-regular-24.png'))
 expenditure_icon = PhotoImage(file=resource_path('icons\wallet-gray.png'))
+san_damian_center_logo = PhotoImage(file=resource_path('icons\san_damian_logo.png')).subsample(4, 4)
 
 
+tb.Button(nav_frame, bootstyle=SUCCESS, image=san_damian_center_logo, compound=tk.LEFT, command=homepage).pack(fill=X, pady=(0, 40))
+tb.Button(nav_frame, text="    Home", bootstyle=SUCCESS, image=home_dark, compound=tk.LEFT, command=homepage, style="but.success.TButton").pack(fill=X, pady=3)
+tb.Button(nav_frame, text="   Students", bootstyle=SUCCESS, image=student_light, compound=tk.LEFT, command=students_page, style="but.success.TButton").pack(fill=X, pady=3)
+tb.Button(nav_frame, text="   Incomings", bootstyle=SUCCESS, image=wallet_light, compound=tk.LEFT, command=incomings_page, style="but.success.TButton").pack(fill=X, pady=3)
+tb.Button(nav_frame, text="   Search Student", bootstyle=SUCCESS, image=search_light, compound=tk.LEFT, command=search_page, style="but.success.TButton").pack(fill=X, pady=3)
+tb.Button(nav_frame, text="   Export Report", bootstyle=SUCCESS, image=export_light, compound=tk.LEFT, command=export_page, style="but.success.TButton").pack(fill=X, pady=3)
+tb.Label(nav_frame, bootstyle="inverse-success", text="Information Technology Solutions").pack(side=BOTTOM)
+tb.Label(nav_frame, bootstyle="inverse-success", text="ITWORKS - ").pack(side=BOTTOM)
+tb.Label(nav_frame, bootstyle="inverse-success", text="all rights reserved").pack(side=BOTTOM)
+tb.Label(nav_frame, bootstyle="inverse-success", text="Copyright © 2024").pack(side=BOTTOM)
 
-tb.Button(nav_frame, text="Home", bootstyle=SUCCESS, image=home_dark, compound=tk.LEFT, command=homepage, style="but.success.TButton").pack(fill=X, pady=5)
-tb.Button(nav_frame, text="Students", bootstyle=SUCCESS, image=student_light, compound=tk.LEFT, command=students_page, style="but.success.TButton").pack(fill=X, pady=5)
-tb.Button(nav_frame, text="Incomings Table", bootstyle=SUCCESS, image=wallet_light, compound=tk.LEFT, command=incomings_page, style="but.success.TButton").pack(fill=X, pady=5)
-tb.Button(nav_frame, text="Search Student", bootstyle=SUCCESS, image=search_light, compound=tk.LEFT, command=search_page, style="but.success.TButton").pack(fill=X, pady=5)
-tb.Button(nav_frame, text="Export Report", bootstyle=SUCCESS, image=export_light, compound=tk.LEFT, command=export_page, style="but.success.TButton").pack(fill=X, pady=5)
 
 
 homepage()

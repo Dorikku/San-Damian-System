@@ -4,7 +4,7 @@
  False,
  True,
  ['C:\\MainFile\\personal\\documents\\Programming\\kuya '
-  'justine\\final\\sds_icon.ico'],
+  'justine\\final\\san_damian_logo.ico'],
  None,
  False,
  False,
@@ -89,7 +89,7 @@
  [],
  False,
  False,
- 1719652182,
+ 1721561425,
  [('runw.exe',
    'C:\\Users\\porks\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],

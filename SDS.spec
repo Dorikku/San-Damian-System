@@ -32,7 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['sds_icon.ico'],
+    icon=['san_damian_logo.ico'],
 )
 coll = COLLECT(
     exe,
